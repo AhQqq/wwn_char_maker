@@ -149,7 +149,6 @@ type Draft = AttributeAllocation & {
   backgroundPicks: string[]
   backgroundRollTables: BackgroundRollTable[]
   backgroundRollResults: BackgroundRollResult[]
-  selectedSkills: string[]
   spellChoicesByClassSlot: SpellChoices
   artChoicesByClass: ArtChoices
   startingEquipment: StartingEquipmentChoice
@@ -266,13 +265,8 @@ const EMPTY_EVALUATION: Evaluation = {
   stepStatus: [],
 }
 
-function skillName(id: string) {
-  return SKILL_BY_ID.get(id)?.name ?? '알 수 없는 기술'
-}
-
 function skillLabel(id: string) {
-  const skill = SKILL_BY_ID.get(id)
-  return skill?.name ?? '알 수 없는 기술'
+  return SKILL_BY_ID.get(id)?.name ?? '알 수 없는 기술'
 }
 
 function classLabel(classOption: ClassData) {
@@ -292,7 +286,7 @@ function focusBudgetForProgression(table?: ProgressionTable): FocusAllowance[] {
 }
 
 function describeAction(action: DataAction) {
-  if (action.action === 'fixed_skill' && action.id) return skillName(action.id)
+  if (action.action === 'fixed_skill' && action.id) return skillLabel(action.id)
   if (action.action === 'tag_skill' && action.id === 'combat') return '전투 기술'
   if (action.action === 'tag_skill' && action.id === 'any') return '아무 기술'
   if (action.action === 'tag_attr' && action.id === 'any') return '+1 능력치'
@@ -359,10 +353,6 @@ function backgroundRollResult(background: BackgroundData, table: BackgroundRollT
   }
 }
 
-function selectedSkillsFromRollResults(results: BackgroundRollResult[]) {
-  return results.map((result) => result.skillId).filter((skillId): skillId is string => Boolean(skillId))
-}
-
 function backgroundChoiceOptions(result: BackgroundRollResult) {
   if (result.action === 'tag_skill' && result.actionId === 'any') {
     return SKILLS.map((skill) => ({ id: skill.id, label: skillLabel(skill.id) }))
@@ -417,7 +407,6 @@ function createInitialDraft(): Draft {
     backgroundPicks: ['', ''],
     backgroundRollTables: DEFAULT_BACKGROUND_ROLL_TABLES,
     backgroundRollResults: [],
-    selectedSkills: [],
     spellChoicesByClassSlot: [[], []],
     artChoicesByClass: {},
     startingEquipment: { method: '' },
@@ -466,7 +455,9 @@ function readSavedDraft(): { draft: Draft; spellNotice: string; artNotice: strin
   if (!raw) return { draft: fallback, spellNotice: '', artNotice: '', equipmentNotice: '' }
 
   try {
-    const { spellChoices: legacySpells, focus: legacyFocus, armor: legacyArmor, ...parsed } = JSON.parse(raw) as Partial<Draft> & { spellChoices?: unknown; focus?: unknown; armor?: unknown }
+    const { spellChoices: legacySpells, focus: legacyFocus, armor: legacyArmor, ...parsed } = JSON.parse(raw) as Partial<Draft> & { spellChoices?: unknown; focus?: unknown; armor?: unknown; selectedSkills?: unknown }
+    // Old drafts cached skills; actual grants are the only source of skill levels.
+    delete parsed.selectedSkills
     const restoredEquipment = restoreStartingEquipment(parsed.startingEquipment, legacyArmor)
     const restoredInventory = restoreEquipmentInventory(parsed.equipmentPurchases, parsed.equipmentLoadout)
     const background = parsed.background && BACKGROUND_BY_ID.has(parsed.background) ? parsed.background : fallback.background
@@ -538,7 +529,6 @@ function readSavedDraft(): { draft: Draft; spellNotice: string; artNotice: strin
       backgroundPicks,
       backgroundRollTables: rollTables,
       backgroundRollResults,
-      selectedSkills: backgroundMethod === 'pick' ? backgroundPicks.filter(Boolean) : selectedSkillsFromRollResults(backgroundRollResults),
       spellChoicesByClassSlot: restoredSpells.choices,
       artChoicesByClass: restoredArts.choices,
     } }
@@ -721,7 +711,6 @@ function App() {
       backgroundPicks: ['', ''],
       backgroundRollTables: DEFAULT_BACKGROUND_ROLL_TABLES,
       backgroundRollResults: [],
-      selectedSkills: [],
     }))
   }
 
@@ -732,7 +721,6 @@ function App() {
       backgroundPicks: ['', ''],
       backgroundRollTables: DEFAULT_BACKGROUND_ROLL_TABLES,
       backgroundRollResults: [],
-      selectedSkills: [],
     }))
   }
 
@@ -743,7 +731,7 @@ function App() {
       if (skillId && skillChoiceReason(evaluateDraftSkills(current).allocation, `background:pick:${index}`, skillId)) return current
       const backgroundPicks = [...current.backgroundPicks]
       backgroundPicks[index] = skillId
-      return { ...current, backgroundPicks, selectedSkills: backgroundPicks.filter(Boolean) }
+      return { ...current, backgroundPicks }
     })
   }
 
@@ -756,7 +744,6 @@ function App() {
         ...current,
         backgroundRollTables: nextTables.slice(0, 3),
         backgroundRollResults: [],
-        selectedSkills: [],
       }
     })
   }
@@ -767,7 +754,6 @@ function App() {
     setDraft((current) => ({
       ...current,
       backgroundRollResults: results,
-      selectedSkills: selectedSkillsFromRollResults(results),
     }))
   }
 
@@ -785,7 +771,6 @@ function App() {
       return {
         ...current,
         backgroundRollResults: nextResults,
-        selectedSkills: selectedSkillsFromRollResults(nextResults),
       }
     })
   }
@@ -841,13 +826,14 @@ function App() {
       const instance = current.focusInstances.find((item) => item.instanceId === focusId)
       if (!instance) return current
       const definition = FOCUS_BY_ID.get(instance.focusId)
-      const detail = evaluateDraftSkills(current).bonuses.details.find((item) => item.focusId === focusId)
+      const { bonuses, allocation } = evaluateDraftSkills(current)
+      const detail = bonuses.details.find((item) => item.focusId === focusId)
       const option = detail?.choices.find((item) => item.bonusIndex === bonusIndex && item.slotIndex === slotIndex)
       if (!option || (choiceId && !option.options.includes(choiceId))) return current
       if (choiceId && current.focusBonusChoices[focusId]?.[String(bonusIndex)]?.some((id, index) => index !== slotIndex && id === choiceId)) return current
       if (definition?.unique_skill && choiceId && current.focusInstances.some((item) => item.instanceId !== focusId && item.focusId === instance.focusId && current.focusBonusChoices[item.instanceId]?.['0']?.[0] === choiceId)) return current
       if (definition?.bonus[bonusIndex]?.action === 'choice_skill' && choiceId &&
-        skillChoiceReason(evaluateDraftSkills(current).allocation, `focus:${focusId}:${bonusIndex}:${slotIndex}`, choiceId)) return current
+        skillChoiceReason(allocation, `focus:${focusId}:${bonusIndex}:${slotIndex}`, choiceId)) return current
       const choices = keepFocusBonusChoices(current.focusBonusChoices, current.focusInstances)
       const focusChoices = { ...choices[focusId] }
       const slots = [...(focusChoices[String(bonusIndex)] ?? [])]

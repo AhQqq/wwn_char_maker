@@ -3,10 +3,11 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { evaluateCharacter } from './character.js';
 import { createArrayAllocation } from '../../frontend/src/attributeAllocation.js';
-import { focusLockReasons, normalizeFocusSelection, toggleFocusSelection } from '../../frontend/src/focusSelection.js';
+import { focusInstanceLockReasons } from '../../frontend/src/focusSelection.js';
 import type { FocusClass, FocusOption } from '../../frontend/src/focusSelection.js';
 import { eligibleSelectedFoci, evaluateFocusBonuses, modifierLimitText, normalizeFocusBonusChoices } from '../../shared/focusBonuses.js';
 import type { FocusBonus, FocusData } from '../../shared/focusBonuses.js';
+import { evaluateFocusInstances, pruneFocusInstances } from '../../shared/focusCreation.js';
 
 function data<T>(name: string): T {
   return JSON.parse(readFileSync(new URL(`../../frontend/data/${name}.json`, import.meta.url), 'utf8')) as T;
@@ -167,8 +168,8 @@ test('Specialist still excludes all combat skills and Magic', () => {
 test('Developed Attribute excludes every mage archetype in frontend and API', () => {
   for (const option of classes.filter((item) => item.archetype === 'mage')) {
     assert.deepEqual(eligibleSelectedFoci(['developed_attribute1'], foci, [option]), []);
-    assert.deepEqual(normalizeFocusSelection(['developed_attribute1'], foci, [option], 3), []);
-    assert.ok(focusLockReasons(focus('developed_attribute1'), [], foci, [option], classes, 3).includes('선택 불가 클래스: 마법사'));
+    assert.deepEqual(pruneFocusInstances([{ instanceId: 'developed', focusId: 'developed_attribute1' }], foci, [option], 3), []);
+    assert.ok(focusInstanceLockReasons(focus('developed_attribute1'), [], foci, [option], classes, 3).includes('선택 불가 클래스: 마법사'));
     const result = evaluateCharacter({ ...character(), classChoices: ['warrior', option.id],
       focus: ['developed_attribute1'], focusBonusChoices: { developed_attribute1: { 0: ['STR'] } } });
     assert.equal(result.focusModifierBonuses.STR, 0);
@@ -179,8 +180,9 @@ test('Developed Attribute excludes every mage archetype in frontend and API', ()
 
 test('Penal and Developed Attribute are mutually exclusive in either selection order', () => {
   for (const [first, second] of [['penal1', 'developed_attribute1'], ['developed_attribute1', 'penal1']] as const) {
-    assert.deepEqual(toggleFocusSelection(second, [first], foci, warrior, 3), [first]);
-    assert.ok(focusLockReasons(focus(second), [first], foci, warrior, classes, 3).includes(`함께 선택 불가: ${focus(first).name} 1레벨`));
+    const selected = [{ instanceId: 'first', focusId: first }];
+    assert.equal(evaluateFocusInstances([...selected, { instanceId: 'second', focusId: second }], undefined, foci, warrior, 3).complete, false);
+    assert.ok(focusInstanceLockReasons(focus(second), selected, foci, warrior, classes, 3).includes(`함께 선택 불가: ${focus(first).name} 1레벨`));
     const result = evaluateCharacter({ ...character(), focus: [first, second],
       focusBonusChoices: { penal1: { 0: ['CHA'] }, developed_attribute1: { 0: ['STR'] } } });
     assert.deepEqual(result.focusModifierBonuses, zero);

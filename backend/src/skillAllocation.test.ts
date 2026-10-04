@@ -139,6 +139,21 @@ test('forged cached skills, levels, advancement points and roll labels are ignor
   assert.deepEqual(evaluateCharacter(forged).skillStates, evaluateCharacter(character()).skillStates);
 });
 
+test('omitting the legacy selectedSkills cache preserves the entire pick and roll evaluation', () => {
+  const drafts = [character(), { ...character(), backgroundMethod: 'roll',
+    backgroundRollTables: ['learn', 'learn', 'growth'],
+    backgroundRollResults: [{ table: 'learn', roll: 1 }, { table: 'learn', roll: 2 },
+      { table: 'growth', roll: 6, choiceId: 'trade' }] }];
+  for (const draft of drafts) {
+    const expected = evaluateCharacter(draft);
+    for (const selectedSkills of [[], ['magic', 'magic', 'missing'], ['notice', 'trade']]) {
+      const restored = JSON.parse(JSON.stringify({ ...draft, selectedSkills }));
+      assert.deepEqual(evaluateCharacter(restored), expected);
+      assert.ok(Array.isArray(expected.selectedSkills));
+    }
+  }
+});
+
 test('ineligible or over-allowance foci cannot grant skill levels or points', () => {
   const restricted = evaluateCharacter({ ...character(), focus: ['divination1'] });
   assert.equal(restricted.skillStates.know?.level, -1);

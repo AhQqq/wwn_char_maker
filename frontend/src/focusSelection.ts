@@ -104,13 +104,6 @@ export function focusInstanceLockReasons(focus: FocusOption, instances: FocusIns
   return evaluateFocusInstances([...instances, candidate], undefined, foci, selectedClasses, budget, grants).issues
 }
 
-export function normalizeFocusSelection(ids: string[], foci: FocusOption[], classes: FocusClass[], limit: number) {
-  const eligible = eligibleIds(ids, foci, classes)
-  const capped = [...new Set(ids)].filter((id) => eligible.has(id)).slice(0, Math.max(0, limit))
-  const retained = eligibleIds(capped, foci, classes)
-  return capped.filter((id) => retained.has(id))
-}
-
 export function dependentFocusIds(id: string, selected: string[], foci: FocusOption[]) {
   const removed = new Set([id])
   let changed = true
@@ -125,14 +118,4 @@ export function dependentFocusIds(id: string, selected: string[], foci: FocusOpt
     }
   }
   return selected.filter((item) => item !== id && removed.has(item))
-}
-
-export function toggleFocusSelection(id: string, selected: string[], foci: FocusOption[], classes: FocusClass[], limit: number) {
-  if (selected.includes(id)) {
-    const removed = new Set([id, ...dependentFocusIds(id, selected, foci)])
-    return selected.filter((item) => !removed.has(item))
-  }
-  const focus = foci.find((item) => item.id === id)
-  if (!focus || focusLockReasons(focus, selected, foci, classes, classes, limit).length) return selected
-  return [...selected, id]
 }
