@@ -1,20 +1,41 @@
 # Project Tasks
 
-Open work for the level-1 character creator, checked against the implementation on 2026-10-04. Completed scaffolding and generic placeholders are omitted. Combat-time simulation, crafting, and ongoing inventory tracking remain outside the current scope.
+Remaining work for the level-1 character creator, reviewed on 2026-10-04. Implementation details belong in `PROJECT_RULES.md`; audit findings belong in the data-review documents. Passing tests verifies encoded behavior, not translation fidelity.
 
-## Creation Rules
+## Data Audits
 
-- [ ] Implement Traditional Education (`traditional_education1`) beyond its existing Invoker-only restriction: tradition selection, spell-school access, starting arts, and Effort. First resolve the full/partial arts rule, duplicate arts, spell count, and Effort-pool interaction with the translator; see entry 102 in `FOCUS_SEMANTIC_AUDIT.md`.
-- [ ] Review the preserved equipment discrepancies in `EQUIPMENT_DATA_REVIEW.md`, especially load footnotes, daily/weekly rations, package bundles, and armor values. Ordinary equipment AC, purchases, and equipped-state rules are implemented; carried capacity, storage/transport assignments, coin loads, and unencoded focus/art equipment exceptions remain outside that implementation.
+- [ ] Audit spells in `frontend/data/spells.json`: translated names and terminology, unambiguous effect wording, levels, schools, numerical values, and cross-references. Compare against the registered translator-provided sources and check first-level eligibility and class-school restrictions; record discrepancies for translator review.
+- [ ] Audit arts in `frontend/data/arts/` and starting grants in `frontend/data/starting_arts.json`: names, terminology, numerical values, Effort costs/durations, class associations, prerequisites, and full/partial selections. Check fixed grants, restricted choices, and linked focus/ability effects against local descriptions.
+- [ ] Correct `Skin Shifter` to `Skinshifter` in `frontend/data/classes.json` (`eng_name`) and active display text, keeping the `skinshifter` ID and references unchanged.
+- [ ] Resolve the existing focus audit in `FOCUS_SEMANTIC_AUDIT.md` and `FOCUS_DATA_REVIEW.md`, rather than repeating it. Review names, wording, bonuses, requirements, levels, tags and unencoded creation effects with the translator. Traditional Education's wording and cross-class Effort-pool questions remain in entry 102.
+- [ ] Audit equipment, properties and starting packages for translation consistency, values, prices, quantities and references. Resolve preserved discrepancies in `EQUIPMENT_DATA_REVIEW.md`, especially load footnotes, daily/weekly rations, package bundles and armor values.
 
-## Ability Data
+## Build Follow-Up
 
-Class, exact-pair, and named focus ability grants resolve through `abilities.json` and appear together on the derived sheet. Full Warrior and full Expert grants are configured in `fullclass_abilities.json`; the three named focus abilities reference shared IDs. Masterful Expertise uses the translator's corrected description. Flaw of Fragility now overrides Warrior/Duelist hit dice from `1d6+2` to `1d6` before HP calculation, with a visible source explanation. Other ability effects remain reference text unless explicitly encoded; combat-time simulation is still out of scope.
+- [ ] Configure a backend production build and matching start command. `backend/package.json` currently has no build script; `start` expects `dist/index.js`, while the TypeScript output directory is not configured. This pass verifies the backend through tests and its running `tsx` development server, not a compiled production deployment.
 
-## Review Follow-Up
+## Deferred Scope
 
-Direct base attack adjustments and typed focus allowances are implemented. Their regression cases and affected legacy fixtures passed as part of the full 206-test backend run on 2026-10-04.
+- [ ] If higher-level creation is added, implement repeated Spirit Familiar Level 2 purchases linked to one Level 1 instance. Save two distinct benefit IDs per purchase, forbid reuse across the entire acquisition history, and save the background subchoice. Adapt upgrade limits, focus-pick costs, removal/restoration and familiar-only effects. The six-benefit catalogue metadata is ready; the current builder still rejects Level 2.
+- [ ] If higher-level creation is added, implement Antimage's Nullifier upgrade and the alternative focus for an already-level-2 owner. Current behavior is a free level-1 grant with paid duplicates refunded, never a level-2 exception.
 
-The equipment page is imported with linked properties and a data-only source snapshot. Starting packages or rolled funds, budgeted shopping, saved purchases/loadouts, owned armor/shield/weapon choices, equipment AC, and armor check penalties are implemented. On 2026-10-04, all 206 backend tests passed and the frontend production build (including TypeScript checks) succeeded. Equipment browser checks passed against the production preview with the live backend at desktop and 390px mobile widths; see the verification section in `EQUIPMENT_DATA_REVIEW.md`. The build retains a non-blocking main-bundle size warning (710.74 kB minified, 198.32 kB gzip).
+Combat-time simulation, Effort spending, conditional roll resolution, crafting, ongoing inventory, carried-capacity/storage/coin loads and System Strain tracking remain outside this level-1 creator. Do not infer these features from passing creation tests.
 
-The full-catalogue semantic audit is already drafted in `FOCUS_SEMANTIC_AUDIT.md`. Its wording proposals, unresolved rulings, and creation-time implementation gaps still need translator review; the audit itself does not need to be repeated. `FOCUS_DATA_REVIEW.md` records earlier implementation passes, not complete catalogue verification.
+## Verified Implementation
+
+Completed checklists are consolidated here; they are not open tasks.
+
+- Focus rules: typed allowances, direct base-attack changes, modifier caps, Impervious Defense AC, direct and conditional saves, free art-granted Nullifier, and Spirit Familiar's data-only preparation with the level-2 ban.
+- Traditional Education: tradition choice, full/partial Invoker starting arts, fixed grants without replacements, first-level spell access with two/four picks, and maximum Effort `max(1, Magic skill level)`.
+- Background growth feeds derived scores, modifiers, HP, AC and saves. Class/focus abilities use shared definitions; Flaw of Fragility overrides Warrior/Duelist hit dice before HP calculation.
+- Equipment: starting packages or funds, budgeted purchases, saved loadouts, owned equipment selection, AC and worn-armor penalties. Detailed data caveats remain in `EQUIPMENT_DATA_REVIEW.md`.
+- Interface: HP/AC terminology, the image-only game banner, Korean labels with small English names, localized class/archetype selectors, a separate rules page, readable focus details and disabled unavailable choices.
+
+## Latest Verification: 2026-10-04
+
+- `npm.cmd test` in `backend`: **258 passed, 0 failed, 0 skipped**. Added the previously omitted `backgroundAttributes.test.ts` to the script; all current `*.test.ts` files are now included.
+- `npm.cmd run build` in `frontend`: **passed**, including TypeScript project checks. Main JS: 799.91 kB minified / 225.72 kB gzip; CSS: 36.01 kB / 7.40 kB gzip. This replaces the earlier 206-test / 710.74 kB checkpoint.
+- Fixed build-blocking class-name and paid/art-granted focus instance types. Updated stale tests for Korean restriction messages and the current non-combat tags, without reverting game data.
+- Production-preview browser checks used an isolated origin at `http://127.0.0.1:4187/` with the live backend; existing saved characters on the normal development origin were not changed. Desktop 1440 x 900 and mobile 390 x 844 checks showed no page-level horizontal overflow or captured console errors/warnings.
+- Browser scenarios passed: initial unarmored AC; growth-to-DEX/AC; Developed Attribute reaching +3; Impervious Defense with armor/shield; Halfmen Mental target 15 -> 17 and reversal on removal; Antimage's free, locked Nullifier with conditional saves and removal on class change; readable but disabled Spirit Familiar Level 2; Traditional Education partial/full Invoker arts and two/four first-level spells; cross-slot spell duplicate locks; saved-draft reload and rules-page round trips.
+- Remaining validation limits: this was a representative Chromium desktop/mobile smoke pass, not exhaustive interaction coverage, a cross-browser/accessibility audit, a backend production build or independent rules-source verification.

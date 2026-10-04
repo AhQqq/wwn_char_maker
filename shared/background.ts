@@ -3,6 +3,8 @@ import type { SkillGrant } from './skillAllocation.js';
 type Action = { action: string; id?: string; count?: number };
 type TaggedOption = { id: string; tags: string[] };
 
+export type BackgroundAttributeGrant = { key: string; attributeId: string; count: number };
+
 export type BackgroundData = {
   id: string;
   name: string;
@@ -41,9 +43,10 @@ export function evaluateBackground(
   const issues: string[] = [];
   const grants: string[] = [];
   const skillGrants: SkillGrant[] = [];
+  const attributeGrants: BackgroundAttributeGrant[] = [];
   const background = backgrounds.find((item) => item.id === draft.background);
   if (!background) {
-    return { complete: false, issues: ["Choose a valid background."], skills: grants, skillGrants };
+    return { complete: false, issues: ["Choose a valid background."], skills: grants, skillGrants, attributeGrants };
   }
 
   for (const [index, action] of background.free_skill.entries()) {
@@ -117,7 +120,11 @@ export function evaluateBackground(
         grants.push(result.choiceId!);
       } else if (action.action === "tag_attr" && attributes.some((attribute) =>
         attribute.id === result.choiceId && (action.id === "any" || attribute.tags.includes(action.id ?? "")))) {
-        // Attribute results resolve a roll without granting a skill.
+        if (!Number.isSafeInteger(action.count) || action.count! <= 0) {
+          issues.push(`Background roll ${index + 1} has an invalid attribute increase.`);
+        } else {
+          attributeGrants.push({ key: `background:roll:${index}`, attributeId: result.choiceId!, count: action.count! });
+        }
       } else {
         issues.push(`Resolve background roll ${index + 1} using its allowed options.`);
       }
@@ -126,5 +133,24 @@ export function evaluateBackground(
     issues.push("Choose whether to pick two background skills or roll three times.");
   }
 
-  return { complete: issues.length === 0, issues, skills: grants, skillGrants };
+  return { complete: issues.length === 0, issues, skills: grants, skillGrants, attributeGrants };
+}
+
+export function applyBackgroundAttributeGrants<K extends string>(
+  scores: Record<K, number>,
+  grants: BackgroundAttributeGrant[],
+) {
+  const attributes = { ...scores };
+  const bonuses: Partial<Record<K, number>> = {};
+  for (const grant of grants) {
+    const id = grant.attributeId as K;
+    if (!Object.hasOwn(attributes, id) || !Number.isSafeInteger(grant.count) || grant.count <= 0) continue;
+    const before = attributes[id];
+    if (!Number.isInteger(before) || before < 3 || before > 18) continue;
+    // Always derive from the allocation, not a previously increased saved score.
+    const increase = Math.min(grant.count, 18 - before);
+    attributes[id] = before + increase;
+    bonuses[id] = (bonuses[id] ?? 0) + increase;
+  }
+  return { attributes, bonuses };
 }

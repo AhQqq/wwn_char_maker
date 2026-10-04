@@ -63,7 +63,7 @@ test('focus origin conflicts, excess picks and illegal class pairs never grant f
   assert.deepEqual(invalidClasses.abilitySelection.abilities, []);
 });
 
-test('requirements and upgrade ownership govern ability grants without duplicating definitions', () => {
+test('creation-level restrictions exclude upgrade ability sources while retaining a valid parent grant', () => {
   const definitions: FocusData[] = [
     { id: 'parent', name: 'Parent', type: 'origin', level: 1, bonus: [], ability_ids: ['accipiter_flight'], requirements: [] },
     { id: 'upgrade', name: 'Upgrade', type: 'origin', level: 2, bonus: [], ability_ids: ['accipiter_flight'],
@@ -76,7 +76,8 @@ test('requirements and upgrade ownership govern ability grants without duplicati
     evaluateFocusInstances(instances, undefined, definitions, warriors, 2).applied, definitions, abilities);
   const upgraded = resolve([root, child]);
   assert.equal(upgraded.abilities.length, 1);
-  assert.equal(upgraded.abilities[0]!.sources.length, 2);
+  assert.equal(upgraded.abilities[0]!.sources.length, 1);
+  assert.deepEqual(upgraded, resolve([root]));
   assert.equal(resolve([root]).abilities[0]!.sources.length, 1);
   assert.deepEqual(resolve([child]).abilities, []);
   assert.deepEqual(resolve([{ instanceId: 'restricted', focusId: 'restricted' }]).abilities, []);

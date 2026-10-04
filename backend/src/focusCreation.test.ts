@@ -27,6 +27,91 @@ const creation = (instances: FocusInstance[], bonusChoices: unknown = {}, ruleCh
   instances, bonusChoices, ruleChoices, foci, classes: warrior, baseLimit: 3, skills, attributes, scores: createArrayAllocation().attributes,
 });
 
+test('higher-level instances never grant effects or extra picks, even with valid parents and repeatability', () => {
+  const root: FocusOption = { ...foci.find((item) => item.id === 'alert1')!, id: 'root', bonus: [], requirements: [], sheet_notes: ['Root note'] };
+  const child: FocusOption = { ...root, id: 'child', name: 'Blocked upgrade', level: 2, repeatable: true,
+    requirements: [{ condition: 'has_focus', id: 'root' }], extra_focus_picks: 2,
+    bonus: [{ action: 'fixed_skill', id: 'alchemy', count: 1 }, { action: 'attribute_modifier', id: 'DEX', value: 1, cap_override: { max: 3 } }],
+    derived_bonus: { attack: 5 }, score_effect: { kind: 'raise_to', value: 18, tags: ['phys'], optional: true }, sheet_notes: ['Blocked note'] };
+  const input = { foci: [root, child], classes: warrior, baseLimit: 3, skills, attributes, scores: draft().attributes };
+  const original = evaluateFocusCreation({ ...input, instances: [instance('root')] });
+  for (const level of [2, 3]) {
+    const catalogue = [root, { ...child, level }];
+    const selected = [instance('root'), instance('child', 'child', 'root')];
+    const result = evaluateFocusCreation({ ...input, foci: catalogue, instances: selected,
+      ruleChoices: { child: { attributeId: 'CON' } } });
+    assert.equal(result.complete, false);
+    assert.ok(result.issues.some((issue) => issue.includes('only level-1')));
+    assert.deepEqual(result.instances, selected);
+    assert.deepEqual(result.applied, [instance('root')]);
+    assert.equal(result.extraPicks, 0);
+    assert.deepEqual(result.bonuses, original.bonuses);
+    assert.deepEqual(result.scores, original.scores);
+    assert.deepEqual(result.derived, original.derived);
+    assert.deepEqual(result.notes, original.notes);
+    assert.ok(focusInstanceLockReasons(catalogue[1]!, selected.slice(0, 1), catalogue, warrior, classes, 100)
+      .some((reason) => reason.includes('only level-1')));
+  }
+});
+
+test('Spirit Familiar level 2 records companion-only, globally distinct benefit choices', () => {
+  const focus = foci.find((item) => item.id === 'spirit_familiar2')!;
+  assert.equal(focus.level, 2);
+  assert.equal(focus.repeatable, true);
+  assert.deepEqual(focus.requirements, [{ condition: 'has_focus', id: 'spirit_familiar1' }]);
+  assert.deepEqual(focus.bonus, []);
+  assert.equal(focus.derived_bonus, undefined);
+  assert.ok(focus.benefit_choices);
+  const { options, ...rules } = focus.benefit_choices;
+  assert.deepEqual(rules, { target: 'familiar', choose: 2, unique_within_instance: true, unique_across_instances: true });
+  assert.deepEqual(options.map((option) => option.id), ['hit_points', 'attack', 'background', 'appearance', 'flight', 'speech']);
+  assert.equal(new Set(options.map((option) => option.id)).size, 6);
+  for (const option of options) {
+    assert.ok(option.name.trim());
+    assert.ok(option.description.trim());
+    assert.ok(focus.effect.includes(option.description));
+    assert.deepEqual(option.selection, option.id === 'background' ? { kind: 'background', count: 1 } : undefined);
+  }
+});
+
+test('Spirit Familiar repeatable upgrade metadata never bypasses the creation-level ban', () => {
+  const root = instance('spirit_familiar1', 'familiar');
+  const upgrades = [instance('spirit_familiar2', 'benefits-a', root.instanceId), instance('spirit_familiar2', 'benefits-b', root.instanceId)];
+  const selected = [root, ...upgrades];
+  const original = creation([root]);
+  const result = creation(selected);
+  assert.equal(result.complete, false);
+  assert.deepEqual(result.instances, selected);
+  assert.deepEqual(result.applied, [root]);
+  assert.ok(result.issues.some((issue) => issue.includes('only level-1')));
+  assert.deepEqual(result.bonuses, original.bonuses);
+  assert.deepEqual(result.scores, original.scores);
+  assert.deepEqual(result.derived, original.derived);
+  assert.deepEqual(result.notes, original.notes);
+  assert.equal(result.extraPicks, original.extraPicks);
+  const focus = foci.find((item) => item.id === 'spirit_familiar2')!;
+  assert.ok(focusInstanceLockReasons(focus, [root], foci, warrior, classes, 100).some((reason) => reason.includes('only level-1')));
+  assert.deepEqual(removeFocusInstance(selected, upgrades[0]!.instanceId, foci, warrior, 3), [root]);
+  assert.deepEqual(removeFocusInstance(selected, root.instanceId, foci, warrior, 3), []);
+});
+
+test('API rejects both legacy and saved modern upgrades without hiding them', () => {
+  for (const choices of [
+    { focus: ['alert1', 'alert2'] },
+    { focusInstances: [instance('alert1', 'root'), instance('alert2', 'child', 'root')] },
+  ]) {
+    const source = { ...draft(), ...choices, characterLevel: 2 };
+    const result = evaluateCharacter(source);
+    assert.equal(result.characterLevel, 1);
+    assert.equal(result.valid, false);
+    assert.equal(result.focusSelection.complete, false);
+    assert.equal(result.focusSelection.instances.length, 2);
+    assert.ok(result.issues.some((issue) => issue.includes('only level-1')));
+    assert.equal(result.focusBonuses.length, 1);
+    assert.equal(result.focusSelection.allowances.assignments.length, 1);
+  }
+});
+
 test('legacy IDs migrate without losing choices or prerequisite ownership', () => {
   const legacy = ['specialist1', 'specialist2', 'developed_attribute1'];
   const migrated = readFocusInstances(undefined, legacy, foci);
@@ -38,7 +123,7 @@ test('legacy IDs migrate without losing choices or prerequisite ownership', () =
   const restored = evaluateCharacter({ ...draft(), focus: legacy, focusBonusChoices: choices });
   assert.deepEqual(restored.focusSelection.instances, migrated.instances);
   assert.equal(restored.focusSelection.complete, false);
-  assert.ok(restored.issues.some((issue) => issue.includes('compatible focus allowance')));
+  assert.ok(restored.issues.some((issue) => issue.includes('only level-1')));
 });
 
 test('repeatable Developed Attribute instances have independent targets and share absolute caps', () => {
@@ -89,18 +174,19 @@ test('Specialist instances require distinct legal skills and do not bypass creat
   assert.equal(forbidden.bonuses.skills.includes('magic'), false);
 });
 
-test('Specialist upgrades belong to exactly one parent and do not grant another skill', () => {
+test('saved Specialist upgrades remain removable but cannot replace level-1 notes or grant a skill', () => {
   const selected = [instance('specialist1', 'a'), instance('specialist1', 'b'), instance('specialist2', 'u', 'b')];
-  assert.equal(focusInstanceLabel(selected[2]!, selected, foci), 'Specialist #2 Lv.2');
+  assert.ok(focusInstanceLabel(selected[2]!, selected, foci).endsWith('(2번째) 2레벨'));
   const result = creation(selected, { a: { 0: ['know'] }, b: { 0: ['connect'] } });
-  assert.equal(result.complete, true, result.issues.join('\n'));
+  assert.equal(result.complete, false);
+  assert.ok(result.issues.some((issue) => issue.includes('only level-1')));
   assert.equal(result.bonuses.skills.filter((id) => id === 'connect').length, 1);
   assert.ok(result.notes.some((note) => note.instanceId === 'a' && note.text.includes('3d6')));
-  assert.ok(result.notes.some((note) => note.instanceId === 'u' && note.text.includes('connect') && note.text.includes('4d6')));
-  assert.equal(result.notes.some((note) => note.instanceId === 'b'), false);
+  assert.equal(result.notes.some((note) => note.instanceId === 'u'), false);
+  assert.ok(result.notes.some((note) => note.instanceId === 'b' && note.text.includes('3d6')));
   const unfunded = evaluateCharacter({ ...draft(), focusInstances: selected, focusBonusChoices: { a: { 0: ['know'] }, b: { 0: ['connect'] } } });
   assert.equal(unfunded.focusSelection.complete, false);
-  assert.deepEqual(removeFocusInstance(selected, 'a', foci, warrior, 3), selected.slice(1));
+  assert.deepEqual(removeFocusInstance(selected, 'a', foci, warrior, 3), [selected[1]]);
   assert.deepEqual(removeFocusInstance(selected, 'b', foci, warrior, 3), [selected[0]]);
   assert.deepEqual(removeFocusInstance(selected, 'u', foci, warrior, 3), selected.slice(0, 2));
   const twice = select([...selected, instance('specialist2', 'u2', 'b')], 5);
@@ -138,17 +224,18 @@ test('Half-Elves modifiers require explicit opt-in and are always applied togeth
   assert.equal(creation([], choices, { half: { packageId: 'elven_parent' } }).bonuses.modifierBonuses.DEX, 0);
 });
 
-test('linked origin upgrades share one family but spend two picks and still require their own parent', () => {
+test('linked origin upgrades are rejected at creation while their valid parent remains', () => {
   const selected = [instance('lizardmen1', 'root'), instance('lizardmen2', 'upgrade', 'root')];
-  assert.equal(select(selected).complete, true);
+  assert.equal(select(selected).complete, false);
+  assert.deepEqual(select(selected).applied, [selected[0]]);
   assert.equal(select(selected, 1).complete, false);
   assert.equal(select([...selected, instance('deepfolk1')]).complete, false);
   assert.equal(select([selected[0]!, instance('lizardmen2', 'upgrade', 'missing')]).complete, false);
   const option = foci.find((item) => item.id === 'lizardmen2')!;
-  assert.deepEqual(focusLockReasons(option, ['lizardmen1'], foci, warrior, classes, 3), []);
+  assert.ok(focusLockReasons(option, ['lizardmen1'], foci, warrior, classes, 3).some((reason) => reason.includes('only level-1')));
   const upgraded = evaluateCharacter({ ...draft(), focus: ['lizardmen1', 'lizardmen2'], focusBonusChoices: { lizardmen1: { 2: ['STR'], 3: ['DEX'] } } });
   assert.equal(upgraded.focusSelection.complete, false);
-  assert.ok(upgraded.focusSelection.issues.some((issue) => issue.includes('compatible focus allowance')));
+  assert.ok(upgraded.focusSelection.issues.some((issue) => issue.includes('only level-1')));
   assert.equal(upgraded.focusSelection.instances.length, 2);
   assert.deepEqual(removeFocusInstance(selected, 'root', foci, warrior, 3), []);
 });
@@ -253,7 +340,7 @@ test('class changes discard ineligible repeats while retaining unrelated indepen
   assert.deepEqual(normalizeFocusRuleChoices({ a: { attributeId: 'STR' }, s: { packageId: 'bad' } }, kept), { s: { packageId: 'bad' } });
 });
 
-test('static attacks and saves alter derived numbers; conditional effects remain notes only', () => {
+test('static attacks and saves alter derived numbers; conditional effects stay outside the targets', () => {
   const warlike = evaluateCharacter({ ...draft(), focus: ['warlike1'], focusBonusChoices: { warlike1: { 2: ['STR'], 3: ['INT', 'WIS'] } } });
   assert.equal(warlike.derived.baseAttackBonus, 1);
   assert.equal(warlike.derived.focusAttackBonus, 1);
@@ -267,7 +354,8 @@ test('static attacks and saves alter derived numbers; conditional effects remain
   const laborer = evaluateCharacter({ ...draft(), focus: ['laborer1'] });
   assert.equal(laborer.derived.mentalSave, 16);
   assert.equal(laborer.derived.saveBonuses.mental, 0);
-  assert.ok(laborer.focusRuleNotes.some((note) => note.text.includes('mind-affecting')));
+  assert.deepEqual(laborer.savingThrows.conditional.map((source) => source.saves), [{ mental: -2 }]);
+  assert.equal(laborer.savingThrows.conditional[0]!.condition, '정신에 영향을 미치는 효과에 대항할 때');
   const bison = evaluateCharacter({ ...draft(), focus: ['focus_0291'] });
   assert.equal(bison.derived.encumbranceStrengthBonus, 4);
   assert.equal(bison.derived.systemStrainMaxBonus, 2);
@@ -332,13 +420,14 @@ test('untagged and spell-only foci cannot spend restricted picks; malformed allo
   }
 });
 
-test('UI and API reject a second untagged focus even with unused restricted picks', () => {
-  const selected = [instance('developed_attribute1', 'a'), instance('specialist1', 'b')];
+test('UI and API reject a third non-combat focus with only a warrior pick remaining', () => {
+  const selected = [instance('developed_attribute1', 'a'), instance('specialist1', 'b'), instance('specialist1', 'c')];
   const option = foci.find((item) => item.id === 'specialist1')!;
-  const reasons = focusInstanceLockReasons(option, selected.slice(0, 1), foci, warrior, classes, typedBudget);
+  assert.equal(evaluateFocusInstances(selected.slice(0, 2), undefined, foci, warrior, typedBudget).complete, true);
+  const reasons = focusInstanceLockReasons(option, selected.slice(0, 2), foci, warrior, classes, typedBudget);
   assert.ok(reasons.some((reason) => reason.includes('compatible focus allowance')));
   const result = evaluateCharacter({ ...draft(), focusInstances: selected,
-    focusBonusChoices: { a: { 0: ['STR'] }, b: { 0: ['know'] } } });
+    focusBonusChoices: { a: { 0: ['STR'] }, b: { 0: ['know'] }, c: { 0: ['connect'] } } });
   assert.equal(result.focusSelection.complete, false);
   assert.equal(result.focusSelection.allowances.counts.find((count) => count.type === 'warrior')!.remaining, 1);
   assert.equal(result.focusModifierBonuses.STR, 0);
@@ -351,25 +440,26 @@ test('Penal adds free allowances and removal reprunes by type rather than total 
   assert.equal(result.complete, true);
   assert.deepEqual(result.allowances.counts.find((count) => count.type === 'free'), { type: 'free', total: 3, used: 3, remaining: 0 });
   const kept = removeFocusInstance(selected, 'p', foci, warrior, typedBudget);
-  assert.deepEqual(kept.map((item) => item.instanceId), ['s1', 'a', 'c']);
+  assert.deepEqual(kept.map((item) => item.instanceId), ['s1', 's2', 'c']);
   assert.equal(evaluateFocusInstances(kept, undefined, foci, warrior, typedBudget).complete, true);
 });
 
-test('class-budget changes remove unfunded upgrades and keep earlier compatible instances', () => {
+test('class-budget changes remove higher-level upgrades and keep compatible first-level instances', () => {
   const selected = [instance('alert1', 'a'), instance('alert2', 'u', 'a'), instance('specialist1', 's')];
   const kept = pruneFocusInstances(selected, foci, warrior, typedBudget);
-  assert.deepEqual(kept.map((item) => item.instanceId), ['a', 'u']);
+  assert.deepEqual(kept.map((item) => item.instanceId), ['a', 's']);
   const mageBudget = [{ id: 'free', val: 1 }];
   assert.deepEqual(pruneFocusInstances(kept, foci, classes.filter((item) => item.id === 'high'), mageBudget).map((item) => item.instanceId), ['a']);
 });
 
-test('Wrathful Mountain adjusts the base once, retains it on upgrade, and recalculates on removal', () => {
+test('Wrathful Mountain keeps only its level-1 adjustment when an invalid saved upgrade is present', () => {
   const root = instance('wrathful_mountain_style1', 'mountain');
   const upgrade = instance('wrathful_mountain_style2', 'upgrade', 'mountain');
   const source = { ...draft(), classChoices: ['warrior', 'warrior'], focusBonusChoices: { mountain: { 0: ['punch'] } } };
   for (const selected of [[root], [root, upgrade], JSON.parse(JSON.stringify([root, upgrade])) as FocusInstance[]]) {
     const result = evaluateCharacter({ ...source, focusInstances: selected });
-    assert.equal(result.focusSelection.complete, true, result.issues.join('\n'));
+    assert.equal(result.focusSelection.complete, selected.length === 1, result.issues.join('\n'));
+    if (selected.length > 1) assert.ok(result.issues.some((issue) => issue.includes('only level-1')));
     assert.equal(result.derived.progressionAttackBonus, 1);
     assert.equal(result.derived.baseAttackBonusAdjustment, -2);
     assert.equal(result.derived.baseAttackBonus, -1);

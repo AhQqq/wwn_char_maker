@@ -1,13 +1,12 @@
 import { ko, rulesText } from './korean'
 import type { AbilitySource, AbilityEvaluation } from '../../shared/abilities'
-import type { SelectableClass } from '../../shared/classSelection'
 import type { FocusInstance } from '../../shared/focusCreation'
 import { focusInstanceLabel } from './focusSelection'
 import type { FocusOption } from './focusSelection'
 
 export function AbilitySheet({ evaluation, classes, foci, instances }: {
   evaluation: AbilityEvaluation
-  classes: SelectableClass[]
+  classes: Array<{ id: string; name: string }>
   foci: FocusOption[]
   instances: FocusInstance[]
 }) {
@@ -24,7 +23,6 @@ export function AbilitySheet({ evaluation, classes, foci, instances }: {
 
   return <section className="summary-block class-abilities" aria-label="능력">
     <h3>능력</h3>
-    <p className="support-text">클래스와 선택한 포커스에서 자동으로 얻는 능력입니다. 구현된 캐릭터 생성 효과는 시트에 반영됩니다. 그 밖의 효과는 설명을 참고해 플레이 중 적용하세요.</p>
     {evaluation.issues.length > 0 && <div className="skill-review" role="status">
       <strong>능력 부여를 확인하세요</strong>
       <ul>{evaluation.issues.map((issue, index) => <li key={index}>{ko(issue)}</li>)}</ul>

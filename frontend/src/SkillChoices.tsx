@@ -22,6 +22,6 @@ export function SkillChoiceOptions({ options, allocation, choiceKey, excludedIds
 export function SkillChoiceFeedback({ allocation, choiceKey }: { allocation: SkillAllocation; choiceKey: string }) {
   const issue = allocation.issues.find((item) => item.key === choiceKey)
   return <small id={`${choiceKey}-feedback`} className={issue ? 'skill-choice-error' : 'skill-choice-hint'} aria-live="polite">
-    {issue ? ko(issue.message) : '이미 두 번 배정된 기술은 다시 선택할 수 없습니다.'}
+    {issue ? ko(issue.message) : null}
   </small>
 }

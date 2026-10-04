@@ -1,6 +1,6 @@
 import cors from 'cors';
 import express from 'express';
-import { dataCounts, evaluateCharacter } from './character.js';
+import { getDataCounts, evaluateCharacter } from './character.js';
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
@@ -8,7 +8,7 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, data: dataCounts });
+  res.json({ ok: true, data: getDataCounts() });
 });
 
 app.post('/api/character/evaluate', (req, res) => {

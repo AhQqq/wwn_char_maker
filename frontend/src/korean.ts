@@ -27,13 +27,13 @@ export function nameFor(value: string) {
   return names.get(value.toLowerCase()) ?? terms[value.toLowerCase()] ?? (/[가-힣]/.test(value) ? value : '알 수 없는 항목')
 }
 
-// Keep source descriptions intact; expand common rule abbreviations only in the UI.
+// Keep source descriptions intact; preserve HP/AC and expand other rule abbreviations only in the UI.
 export function rulesText(value: string | undefined) {
   const abbreviations: Record<string, string> = {
     STR: '근력', DEX: '민첩', CON: '건강', INT: '지능', WIS: '지혜', CHA: '매력',
-    HP: '체력', HD: '히트 주사위', AC: '방어도', GM: '진행자', PC: '플레이어 캐릭터', NPC: '비플레이어 캐릭터',
+    HD: '히트 주사위', GM: '진행자', PC: '플레이어 캐릭터', NPC: '비플레이어 캐릭터',
   }
-  return (value ?? '').replace(/\b(STR|DEX|CON|INT|WIS|CHA|HP|HD|AC|GM|PC|NPC)\b(?:(으로|로|은|는|이|가|을|를)(?=\s|[.,:;!?()0-9]|$))?/g, (_match, term: string, particle?: string) => {
+  return (value ?? '').replace(/\b(STR|DEX|CON|INT|WIS|CHA|HD|GM|PC|NPC)\b(?:(으로|로|은|는|이|가|을|를)(?=\s|[.,:;!?()0-9]|$))?/g, (_match, term: string, particle?: string) => {
     const label = abbreviations[term]!
     const finalConsonant = (label.charCodeAt(label.length - 1) - 0xac00) % 28
     if (!particle) return label
@@ -101,10 +101,10 @@ const messages: Record<string, string> = {
   "Malformed saved purchases were cleared.": "형식이 올바르지 않은 저장 구매 내역을 초기화했습니다.",
   "Malformed saved equipped choices were cleared.": "형식이 올바르지 않은 저장 착용 내역을 초기화했습니다.",
   "Equipment purchases exceed the available starting funds.": "장비 구매 비용이 시작 자금을 초과합니다.",
-  "Finish a valid starting equipment choice and purchases before calculating AC.": "시작 장비와 구매 내역을 완료해야 방어도를 계산할 수 있습니다.",
-  "The equipped armor has invalid AC or skill penalty data.": "착용한 갑옷의 방어도 또는 기술 페널티 데이터가 올바르지 않습니다.",
-  "The equipped shield has invalid AC data.": "손에 든 방패의 방어도 데이터가 올바르지 않습니다.",
-  "AC requires a valid final DEX modifier.": "방어도 계산에 유효한 최종 민첩 수정치가 필요합니다.",
+  "Finish a valid starting equipment choice and purchases before calculating equipped AC.": "착용 장비를 반영한 AC를 계산하려면 시작 장비와 구매 내역을 완료하세요.",
+  "The equipped armor has invalid AC or skill penalty data.": "착용한 갑옷의 AC 또는 기술 페널티 데이터가 올바르지 않습니다.",
+  "The equipped shield has invalid AC data.": "손에 든 방패의 AC 데이터가 올바르지 않습니다.",
+  "AC requires a valid final DEX modifier.": "AC 계산에 유효한 최종 민첩 수정치가 필요합니다.",
   "A two-handed active weapon cannot be used with a held shield. Stow the shield or change the weapon.": "양손 무기와 방패를 동시에 사용할 수 없습니다. 방패를 해제하거나 무기를 바꾸세요.",
   "To attack with a shield, select that same shield as your held shield.": "방패로 공격하려면 그 방패를 손에 든 방패로도 선택해야 합니다.",
   "Starting equipment must be a method selection.": "시작 장비 획득 방식을 선택하세요.",
@@ -128,9 +128,9 @@ const messages: Record<string, string> = {
   "3-4. Background and background skills": "3-4. 배경과 배경 기술",
   "5-6. Class and foci": "5-6. 클래스와 포커스",
   "7. Free skill": "7. 자유 기술",
-  "8-9, 12. Hit points, attack, and saves": "8-9, 12. 체력·공격·내성",
+  "8-9, 12. Hit points, attack, and saves": "8-9, 12. HP·공격·내성",
   "10. Starting equipment or silver": "10. 시작 장비 또는 은화",
-  "11. Equipped armor, shield, and Armor Class": "11. 착용 갑옷·방패·방어도",
+  "11. Equipped armor, shield, and Armor Class": "11. 착용 갑옷·방패·AC",
   "13. Name and goal": "13. 이름과 목표",
   "14. Class arts": "14. 클래스 기교",
   "15. First-level spells (final stage)": "15. 1레벨 주문 (마지막 단계)",
@@ -138,13 +138,14 @@ const messages: Record<string, string> = {
   "Class selection uses two slots; only classes marked can_be_full_class may fill both slots.": "클래스는 두 칸에 선택합니다. 순수 클래스로 허용된 클래스만 양쪽에 같은 클래스를 고를 수 있습니다.",
   "Class pairing exclusions are checked in both directions using incompatible_classes and incompatible_archetypes.": "클래스와 원형의 조합 제한은 양쪽 클래스 모두를 기준으로 확인합니다.",
   "Starting arts are applied once per distinct class, using partial or full rules. Fixed grants, restricted choices, and additional picks are separate.": "시작 기교는 부분·순수 클래스 규칙에 따라 클래스별로 한 번씩 부여됩니다. 자동 습득·지정 목록·추가 선택은 별개입니다.",
-  "Base hit dice, attack bonus, and focus count come from progression_tables.json; applicable encoded ability overrides determine effective hit dice before HP is calculated.": "기본 히트 주사위·공격 보너스·포커스 선택권은 클래스 성장 표를 따릅니다. 구현된 능력의 예외를 적용한 히트 주사위로 체력을 계산합니다.",
-  "Equipment AC uses armor base (10 unarmored), or a higher shield base; a shield instead adds +1 when armor base equals or exceeds it. Final DEX is added afterward. Legacy armor bonuses are ignored.": "갑옷 기본 방어도(맨몸 10)와 방패 기본 방어도 중 높은 값을 사용합니다. 갑옷이 방패 이상이면 대신 방패로 +1을 받고, 최종 민첩 수정치를 더합니다. 이전 갑옷 보너스는 적용하지 않습니다.",
+  "Base hit dice, attack bonus, and focus count come from progression_tables.json; applicable encoded ability overrides determine effective hit dice before HP is calculated.": "기본 히트 주사위·공격 보너스·포커스 선택권은 클래스 성장 표를 따릅니다. 구현된 능력의 예외를 적용한 히트 주사위로 HP를 계산합니다.",
+  "AC uses the higher of armor base (10 unarmored) and eligible focus base AC, then applies the usual shield rule and final DEX. Worn armor penalties remain. Legacy armor bonuses are ignored.": "갑옷 기본 AC(맨몸 10)와 유효한 포커스의 기본 AC 중 높은 값을 사용한 뒤 기존 방패 규칙과 최종 민첩 수정치를 적용합니다. 착용 갑옷의 페널티는 유지하며, 이전 갑옷 보너스는 적용하지 않습니다.",
+  "Base AC rules require a positive integer character level.": "기본 AC 계산에는 1 이상의 정수 캐릭터 레벨이 필요합니다.",
   "Starting equipment grants one fixed package or the sum of three saved d6 rolls multiplied by 10 silver, never both. Client-supplied grants and money totals are not authoritative.": "시작 장비는 고정 꾸러미 하나 또는 저장된 3d6 합계의 10배에 해당하는 은화 중 하나입니다. 장비와 자금 총액은 서버에서 다시 계산합니다.",
   "Catalogue purchases use 10 copper per silver and cannot exceed starting funds. Missing prices are not free items. Package grants cannot be sold for extra starting funds.": "구매는 10동화 = 1은화로 계산하며 시작 자금을 초과할 수 없습니다. 가격 미기재 장비는 무료가 아니며, 꾸러미 장비를 팔아 시작 자금을 늘릴 수 없습니다.",
   "Only owned equipment may be equipped. A held shield conflicts with an active two-handed weapon. Armor penalties affect Sneak/Exert checks, not learned skill levels.": "보유한 장비만 착용할 수 있습니다. 방패와 양손 무기를 동시에 사용할 수 없습니다. 갑옷의 페널티는 잠행·운동 판정에 적용되며 기술 레벨은 바꾸지 않습니다.",
   "Package row encumbrance already includes quantity. Catalogue purchase lots apply explicit groups of three or five; ambiguous footnotes remain flagged. These subtotals are not carried-load limits: storage, transport, and coin loads are not tracked.": "꾸러미 행별 하중은 수량을 포함합니다. 구매 장비에는 명시된 3개·5개 묶음 규칙을 적용하며 모호한 각주는 확인이 필요합니다. 보관·운송·동전 하중과 실제 운반 한도는 계산하지 않습니다.",
-  "Equipment statistics and property descriptions are reference rules. Unencoded focus/art armor exceptions, attack rolls, damage modifiers, reloads, and situational effects require manual adjudication.": "장비 수치와 특성은 참고 규칙입니다. 미구현된 포커스·기교의 방어도 예외, 명중 판정, 피해 보정, 재장전과 상황별 효과는 직접 적용하세요.",
+  "Equipment statistics and property descriptions are reference rules. Unencoded focus/art armor exceptions, attack rolls, damage modifiers, reloads, and situational effects require manual adjudication.": "장비 수치와 특성은 참고 규칙입니다. 미구현된 포커스·기교의 AC 예외, 명중 판정, 피해 보정, 재장전과 상황별 효과는 직접 적용하세요.",
   "Class skill bonuses apply once per distinct class. Skills start at -1 and cannot exceed level 1 at creation.": "클래스 기술 보너스는 클래스별로 한 번씩 적용합니다. 기술은 -1에서 시작하며 생성 시 1레벨을 넘을 수 없습니다.",
   "Named abilities resolve from one catalogue using class, exact class-pair, and eligible focus grants; descriptions do not automatically apply effects.": "능력은 클래스·클래스 조합·유효한 포커스 부여 규칙에 따라 통합 목록에서 가져옵니다. 설명에 적힌 효과가 모두 자동 적용되지는 않습니다.",
   "A third fixed skill allotment from a focus gives that skill 2 advancement points; other forced overflow requires manual review.": "포커스의 고정 부여로 같은 기술을 세 번째 받으면 성장 점수 2점을 얻습니다. 다른 강제 중복 부여는 별도 확인이 필요합니다.",
@@ -169,6 +170,10 @@ const messages: Record<string, string> = {
 
 type MessagePattern = [RegExp, (...parts: string[]) => string]
 const patterns: MessagePattern[] = [
+  [/^(.+): invalid base AC rule in foci\.json\.$/, (name) => nameFor(name) + ': 기본 AC 규칙 데이터가 올바르지 않습니다.'],
+  [/^(.+): invalid tradition rule configuration\.$/, (name) => nameFor(name) + ': 마법 전통 규칙 설정을 확인하세요.'],
+  [/^(.+): a valid Invoker class selection is required\.$/, (name) => nameFor(name) + ': 소언사가 포함된 유효한 클래스 조합이 필요합니다.'],
+  [/^(.+): choose one allowed magical tradition\.$/, (name) => nameFor(name) + ': 마법 전통 하나를 선택하세요.'],
   [/^(.+) must be an integer between 3 and 18\.$/, (id) => nameFor(id) + ': 3부터 18까지의 정수여야 합니다.'],
   [/^Class slot ([AB]): choose a known class\.$/, (slot) => (slot === 'A' ? '첫 번째' : '두 번째') + ' 클래스를 선택하세요.'],
   [/^(.+) is partial-only(?: and can occupy only one class slot\.|; choose a different second class\.)$/, (name) => nameFor(name) + ': 부분 클래스 전용입니다. 다른 클래스와 조합하세요.'],
@@ -184,6 +189,7 @@ const patterns: MessagePattern[] = [
   [/^Background roll (\d+) does not match its allocated table\.$/, (n) => '배경 주사위 ' + n + '의 결과와 배정한 표가 일치하지 않습니다.'],
   [/^Background roll (\d+) must be between 1 and (\d+)\.$/, (n, max) => '배경 주사위 ' + n + '은(는) 1부터 ' + max + '까지여야 합니다.'],
   [/^Resolve background roll (\d+) using its allowed options\.$/, (n) => '배경 주사위 ' + n + '의 결과를 허용된 선택지에서 골라 적용하세요.'],
+  [/^Background roll (\d+) has an invalid attribute increase\.$/, (n) => '배경 주사위 ' + n + '의 능력치 상승량이 올바르게 등록되지 않았습니다.'],
   [/^(.+) skill bonus \(bonus (\d+), choice (\d+)\)$/, (name, bonus, choice) => nameFor(name) + ' 보너스 기술 (보너스 ' + bonus + ', 선택 ' + choice + ')'],
   [/^(.+) bonus (\d+)$/, (name, n) => nameFor(name) + ' 보너스 ' + n],
   [/^(.+): unknown skill (.+)\.$/, (label) => ko(label) + ': 등록되지 않은 기술입니다. 다시 선택하세요.'],
@@ -198,6 +204,7 @@ const patterns: MessagePattern[] = [
   [/^Unknown focus: .+\.$/, () => '등록되지 않은 포커스입니다. 해제한 뒤 다시 선택하세요.'],
   [/^Duplicate focus instance ID: .+\.$/, () => '저장된 포커스 선택이 중복되었습니다. 해당 항목을 다시 선택하세요.'],
   [/^(.+) cannot be selected more than once\.$/, (name) => nameFor(name) + ': 중복 선택할 수 없습니다.'],
+  [/^(.+): only level-1 foci can be selected at character creation\.$/, (name) => nameFor(name) + ': 캐릭터 생성 시에는 1레벨 포커스만 선택할 수 있습니다.'],
   [/^(.+): select a valid parent focus instance for this upgrade\.$/, (name) => nameFor(name) + ': 먼저 연결할 하위 레벨 포커스를 선택하세요.'],
   [/^(.+): a focus instance can receive this upgrade only once\.$/, (name) => nameFor(name) + ': 같은 항목에 이 상위 레벨을 두 번 적용할 수 없습니다.'],
   [/^Focus requirements not met: (.+)\.$/, (name) => nameFor(name) + ': 포커스의 선행 조건을 충족하지 못했습니다.'],
@@ -232,7 +239,10 @@ const patterns: MessagePattern[] = [
   [/^Unknown ability-granting focus: .+\.$/, () => '능력을 부여하는 포커스를 찾을 수 없습니다.'],
   [/^(.+): ability_ids must be a list of nonempty ability IDs\.$/, (name) => nameFor(name) + ': 부여 능력 목록이 올바르지 않습니다.'],
   [/^Duplicate class ability combination: .+\.$/, () => '클래스 능력 규칙에 같은 조합이 중복 등록되어 있습니다.'],
-  [/^(.+): invalid (?:extra focus allowance|score effect|derived bonus) in foci\.json\.$/, (name) => nameFor(name) + ': 포커스 효과 데이터가 올바르지 않습니다.'],
+  [/^(.+): invalid (?:extra focus allowance|score effect|derived bonus|conditional saves) in foci\.json\.$/, (name) => nameFor(name) + ': 포커스 효과 데이터가 올바르지 않습니다.'],
+  [/^(.+): invalid focus grants in arts data\.$/, (name) => nameFor(name) + ': 기교의 포커스 부여 데이터가 올바르지 않습니다.'],
+  [/^(.+): grants must reference an existing level-1 focus\.$/, (name) => nameFor(name) + ': 부여 목록에는 등록된 1레벨 포커스만 지정할 수 있습니다.'],
+  [/^(.+): the granted focus does not meet class requirements\.$/, (name) => nameFor(name) + ': 부여할 포커스의 클래스 조건을 충족하지 못했습니다.'],
   [/^Specialist \((.+)\): roll 3d6 and discard the lowest die on checks using this skill\. Resolve dice during play\.$/, (skill) => '특성화 인재 (' + nameFor(skill) + '): 이 기술 판정은 3d6을 굴리고 가장 낮은 주사위를 버립니다. 플레이 중 적용하세요.'],
   [/^Specialist Level 2 \((.+)\): roll 4d6 and discard the lowest die, following the current local description\. Resolve dice during play\.$/, (skill) => '특성화 인재 2레벨 (' + nameFor(skill) + '): 현재 설명에 따라 4d6을 굴리고 가장 낮은 주사위를 버립니다. 플레이 중 적용하세요.'],
 ]

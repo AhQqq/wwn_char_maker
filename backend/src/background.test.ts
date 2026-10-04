@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { evaluateBackground } from "./background.js";
+import { applyBackgroundAttributeGrants, evaluateBackground } from "./background.js";
 import type { BackgroundData, BackgroundDraft } from "./background.js";
 
 function data<T>(name: string): T {
@@ -115,4 +115,66 @@ test("inactive methods and cached grants never contribute skills", () => {
   };
   assert.deepEqual(evaluate(rolling).skills, ["craft", "connect", "connect", "connect"]);
   assert.equal(evaluate(rolling).complete, true);
+});
+
+test("growth grants use table counts and reject missing or wrong-tag attribute choices", () => {
+  const draft = {
+    backgroundMethod: "roll", backgroundRollTables: ["growth", "growth", "growth"],
+    backgroundRollResults: [
+      { table: "growth", roll: 1, choiceId: "STR", count: 99, actionId: "mental" },
+      { table: "growth", roll: 2, choiceId: "STR" },
+      { table: "growth", roll: 4, choiceId: "INT" },
+    ],
+  };
+  const result = evaluate(draft);
+  assert.equal(result.complete, true);
+  assert.deepEqual(result.attributeGrants, [
+    { key: "background:roll:0", attributeId: "STR", count: 1 },
+    { key: "background:roll:1", attributeId: "STR", count: 2 },
+    { key: "background:roll:2", attributeId: "INT", count: 2 },
+  ]);
+  assert.deepEqual(evaluate({ ...draft, backgroundMethod: "pick" }).attributeGrants, []);
+  for (const choiceId of ["", "INT", "missing", "__proto__"]) {
+    const results = [...draft.backgroundRollResults];
+    results[1] = { ...results[1]!, choiceId };
+    const invalid = evaluate({ ...draft, backgroundRollResults: results });
+    assert.equal(invalid.complete, false);
+    assert.equal(invalid.attributeGrants.some((grant) => grant.key === "background:roll:1"), false);
+  }
+});
+
+test("background score increases are derived without mutation and capped at 18", () => {
+  const scores = { STR: 14, DEX: 17, CON: 18 };
+  const grants = [
+    { key: "first", attributeId: "STR", count: 1 },
+    { key: "second", attributeId: "STR", count: 2 },
+    { key: "third", attributeId: "DEX", count: 2 },
+    { key: "fourth", attributeId: "CON", count: 2 },
+  ];
+  const result = applyBackgroundAttributeGrants(scores, grants);
+  assert.deepEqual(result.attributes, { STR: 17, DEX: 18, CON: 18 });
+  assert.deepEqual(result.bonuses, { STR: 3, DEX: 1, CON: 0 });
+  assert.deepEqual(scores, { STR: 14, DEX: 17, CON: 18 });
+  assert.deepEqual(applyBackgroundAttributeGrants(scores, grants), result);
+  assert.deepEqual(applyBackgroundAttributeGrants(scores, []).attributes, scores);
+});
+
+test("invalid table amounts and dice do not award attribute points", () => {
+  const draft = { ...base, backgroundMethod: "roll", backgroundRollTables: ["growth", "learn", "learn"],
+    backgroundRollResults: [{ table: "growth", roll: 1, choiceId: "STR" }, { table: "learn", roll: 1 }, { table: "learn", roll: 8 }] };
+  for (const count of [undefined, 0, -1, 1.5, Infinity]) {
+    const catalogue = backgrounds.map((background) => background.id === base.background
+      ? { ...background, growth: background.growth.map((row, index) => index === 0 ? { ...row, count } : row) }
+      : background);
+    const result = evaluateBackground(draft, catalogue, skills, attributes);
+    assert.equal(result.complete, false);
+    assert.deepEqual(result.attributeGrants, []);
+  }
+  for (const roll of [0, 7, 1.5]) {
+    const result = evaluate({ ...draft, backgroundRollResults: [
+      { table: "growth", roll, choiceId: "STR" }, ...draft.backgroundRollResults.slice(1),
+    ] });
+    assert.deepEqual(result.attributeGrants, []);
+  }
+  assert.deepEqual(evaluate({ ...draft, backgroundRollTables: ["learn", "learn", "learn"] }).attributeGrants, []);
 });

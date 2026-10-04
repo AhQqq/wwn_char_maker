@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import { emptyLoadout, evaluateEquipmentInventory, equipmentPriceCopper, pruneEquipmentLoadout, restoreEquipmentInventory } from '../../shared/equipment.js';
 import type { EquipmentDefinition, EquipmentPackage, EquipmentProperty } from '../../shared/startingEquipment.js';
 import { evaluateCharacter } from './character.js';
+import { ko, rulesText } from '../../frontend/src/korean.js';
 
 const data = <T>(name: string): T => JSON.parse(readFileSync(new URL(`../../frontend/data/${name}.json`, import.meta.url), 'utf8')) as T;
 const equipment = data<EquipmentDefinition[]>('equipment');
@@ -14,6 +15,12 @@ const packageChoice = (packageId: string) => ({ method: 'package', packageId });
 const evaluate = (purchases: unknown = [], loadout: unknown = emptyLoadout(), startingEquipment: unknown = cash, dexterity = 0) =>
   evaluateEquipmentInventory({ startingEquipment, purchases, loadout, dexterity }, packages, equipment, properties);
 const loadout = (armorId = '', shieldId = '', weaponId = '') => ({ armorId, shieldId, weaponId });
+
+test('Korean equipment labels and rule descriptions retain the AC abbreviation', () => {
+  assert.equal(ko('11. Equipped armor, shield, and Armor Class'), '11. 착용 갑옷·방패·AC');
+  assert.equal(rulesText('AC는 10 + DEX 수정치입니다.'), 'AC는 10 + 민첩 수정치입니다.');
+  assert.equal(rulesText('AC 10, AC를 무시, AC로 계산'), 'AC 10, AC를 무시, AC로 계산');
+});
 
 test('catalogue covers every archived table row and all properties without breaking packages', () => {
   const snapshot = data<{ tables: Record<string, string[][]>; properties: EquipmentProperty[] }>('old/equipment_source');
@@ -116,12 +123,48 @@ test('invalid purchases are atomic, do not turn missing prices into free goods, 
     assert.equal(result.complete, false, JSON.stringify(purchases));
     assert.deepEqual(result.items, []);
     assert.equal(result.remainingCopper, null);
-    assert.equal(result.armorClass.value, null);
+    assert.equal(result.armorClass.value, 10);
+    assert.equal(result.armorClass.complete, true);
   }
   const result = evaluate([{ id: 'dagger', count: 1 }], emptyLoadout(), packageChoice('armored_warrior'));
   assert.equal(result.complete, false);
   assert.equal(result.items.find((item) => item.id === 'dagger')?.count, 1);
   assert.equal(result.items.find((item) => item.id === 'dagger')?.purchasedCount, 0);
+});
+
+test('initial unarmored AC uses final DEX before equipment selection is complete', () => {
+  for (const startingEquipment of [undefined, { method: '' }]) {
+    for (const dexterity of [-2, 0, 1, 2, 3]) {
+      for (const choice of [undefined, emptyLoadout(), loadout('unarmored', '', 'unarmed_attack')]) {
+        const result = evaluateEquipmentInventory({ startingEquipment, loadout: choice, dexterity }, packages, equipment, properties);
+        assert.equal(result.complete, false);
+        assert.equal(result.starting.complete, false);
+        assert.equal(result.armorClass.complete, true, result.armorClass.issues.join('\n'));
+        assert.equal(result.armorClass.base, 10);
+        assert.equal(result.armorClass.shieldBonus, 0);
+        assert.equal(result.armorClass.value, 10 + dexterity);
+      }
+    }
+  }
+  for (const choice of [null, {}, loadout('partial_armor'), loadout('', 'large_shield'), loadout('', '', 'dagger')]) {
+    const result = evaluate([], choice, { method: '' }, 1);
+    assert.equal(result.armorClass.complete, false);
+    assert.equal(result.armorClass.value, null);
+  }
+  assert.equal(evaluate([], emptyLoadout(), { method: '' }, NaN).armorClass.value, null);
+});
+
+test('API exposes unarmored AC without marking unfinished starting equipment complete', () => {
+  for (const dexterity of [3, 10, 18]) {
+    const result = evaluateCharacter({ attributeMethod: 'rolled',
+      attributes: { STR: 10, DEX: dexterity, CON: 10, INT: 10, WIS: 10, CHA: 10 },
+      startingEquipment: { method: '' }, equipmentLoadout: emptyLoadout() });
+    assert.equal(result.derived.ac, 10 + result.modifiers.DEX);
+    assert.equal(result.armorClass.complete, true);
+    assert.equal(result.stepStatus.find((step) => step.key === 'armorClass')?.complete, true);
+    assert.equal(result.stepStatus.find((step) => step.key === 'equipment')?.complete, false);
+    assert.equal(result.valid, false);
+  }
 });
 
 test('AC resolves armor/shield bases before final DEX; unselected package items provide no AC', () => {

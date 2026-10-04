@@ -1,5 +1,6 @@
 import { evaluateStartingEquipment } from './startingEquipment.js';
 import type { EquipmentDefinition, EquipmentEvaluation, EquipmentPackage, EquipmentProperty, GrantedEquipment } from './startingEquipment.js';
+import type { FocusBaseAcEvaluation, FocusBaseAcSource } from './focusArmorClass.js';
 
 // Confirmed by the translator; the source page does not specify exchange rates.
 export const COPPER_PER_SILVER = 10;
@@ -8,6 +9,8 @@ export type EquipmentLoadout = { armorId: string; shieldId: string; weaponId: st
 export type OwnedEquipment = GrantedEquipment & { packageCount: number; purchasedCount: number };
 export type ArmorClassEvaluation = {
   value: number | null; complete: boolean; base: number | null; shieldBonus: number;
+  baseSource: { kind: 'armor' | 'shield' | 'focus'; id: string; name: string; instanceId?: string } | null;
+  focusBases: FocusBaseAcSource[];
   dexterity: number; armor: EquipmentDefinition | null; shield: EquipmentDefinition | null;
   weapon: EquipmentDefinition | null; skillPenalties: { sneak: number; exert: number };
   issues: string[];
@@ -75,7 +78,7 @@ function hasValidProperties(item: EquipmentDefinition, properties: EquipmentProp
 
 export function evaluateEquipmentInventory(input: {
   startingEquipment?: unknown; purchases?: unknown; loadout?: unknown; dexterity: number;
-}, packages: EquipmentPackage[], equipment: EquipmentDefinition[], properties: EquipmentProperty[]): InventoryEvaluation {
+}, packages: EquipmentPackage[], equipment: EquipmentDefinition[], properties: EquipmentProperty[], focusBaseAc?: FocusBaseAcEvaluation): InventoryEvaluation {
   const starting = evaluateStartingEquipment(input.startingEquipment, packages, equipment);
   const purchases = readPurchases(input.purchases);
   const loadout = readLoadout(input.loadout);
@@ -123,8 +126,12 @@ export function evaluateEquipmentInventory(input: {
     return item.encumbrance === null || (item.purchasedCount > 0 && definition?.propertyIds.some((id) =>
       id === 'negligible_load' || id === 'no_load_when_worn'));
   }).map((item) => item.id);
+  const requiresOwnedEquipment = Boolean(
+    (loadout.choice.armorId && loadout.choice.armorId !== 'unarmored') || loadout.choice.shieldId ||
+    (loadout.choice.weaponId && loadout.choice.weaponId !== 'unarmed_attack'));
+  // Inherent unarmored AC does not depend on completing starting equipment or purchases.
   const armorClass = evaluateEquipmentLoadout(loadout.choice, items, equipment, properties, input.dexterity,
-    [...loadout.issues, ...(!complete ? ['Finish a valid starting equipment choice and purchases before calculating AC.'] : [])]);
+    [...loadout.issues, ...(!complete && requiresOwnedEquipment ? ['Finish a valid starting equipment choice and purchases before calculating equipped AC.'] : [])], focusBaseAc);
   return {
     starting, purchases: purchases.choices, loadout: loadout.choice, items,
     spentCopper: complete ? spent : null, remainingCopper: complete && funds !== null ? funds - spent : null,
@@ -136,8 +143,9 @@ export function evaluateEquipmentInventory(input: {
 
 export function evaluateEquipmentLoadout(loadout: EquipmentLoadout, items: OwnedEquipment[],
   equipment: EquipmentDefinition[], properties: EquipmentProperty[], dexterity: number,
-  initialIssues: string[] = []): ArmorClassEvaluation {
-  const issues = [...initialIssues];
+  initialIssues: string[] = [], focusBaseAc?: FocusBaseAcEvaluation): ArmorClassEvaluation {
+  const issues = [...initialIssues, ...(focusBaseAc?.issues ?? [])];
+  const focusBases = focusBaseAc?.sources ?? [];
   const lookup = (id: string, kind: 'armor' | 'shield' | 'weapon') => {
     const matches = equipment.filter((item) => item.id === id);
     const item = matches.length === 1 ? matches[0] : undefined;
@@ -173,11 +181,27 @@ export function evaluateEquipmentLoadout(loadout: EquipmentLoadout, items: Owned
     issues.push('To attack with a shield, select that same shield as your held shield.');
   }
   const complete = issues.length === 0;
-  const base = complete && armorData ? Math.max(armorData.baseAc, shieldData?.baseAc ?? armorData.baseAc) : null;
-  const shieldBonus = complete && shieldData && armorData && armorData.baseAc >= shieldData.baseAc ? shieldData.armorBonus : 0;
+  let base: number | null = null;
+  let baseSource: ArmorClassEvaluation['baseSource'] = null;
+  let shieldBonus = 0;
+  if (complete && armor && armorData) {
+    base = armorData.baseAc;
+    baseSource = { kind: 'armor', id: armor.id, name: armor.name };
+    // Alternative base AC replaces weaker armor, never adds to it. Keep worn-armor penalties.
+    for (const source of focusBases) if (source.baseAc >= base) {
+      base = source.baseAc;
+      baseSource = { kind: 'focus', id: source.focusId, name: source.name, instanceId: source.instanceId };
+    }
+    if (shield && shieldData) {
+      if (shieldData.baseAc > base) {
+        base = shieldData.baseAc;
+        baseSource = { kind: 'shield', id: shield.id, name: shield.name };
+      } else shieldBonus = shieldData.armorBonus;
+    }
+  }
   return {
     value: base === null ? null : base + shieldBonus + dexterity,
-    complete, base, shieldBonus, dexterity, armor, shield, weapon,
+    complete, base, baseSource, focusBases, shieldBonus, dexterity, armor, shield, weapon,
     skillPenalties: complete && armorData ? { ...armorData.skillPenalties } : { sneak: 0, exert: 0 }, issues,
   };
 }

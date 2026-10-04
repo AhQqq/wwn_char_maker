@@ -1,4 +1,5 @@
 import type { SkillGrant } from './skillAllocation.js';
+import type { ConditionalSaveModifier, SaveModifiers } from './savingThrows.js';
 
 type TaggedOption = { id: string; tags: string[] };
 type OptionFilter = { ids?: string[]; tags?: string[] };
@@ -28,16 +29,34 @@ export type FocusData = {
   tags?: string[];
   level?: number;
   repeatable?: boolean;
+  // Catalogue-only companion choices; the level-1 creator does not evaluate them.
+  benefit_choices?: {
+    target: 'familiar';
+    choose: number;
+    unique_within_instance: boolean;
+    unique_across_instances: boolean;
+    options: Array<{
+      id: string;
+      name: string;
+      description: string;
+      selection?: { kind: 'background'; count: 1 };
+    }>;
+  };
   unique_skill?: boolean;
   extra_focus_picks?: number;
+  base_ac?: { base: number; level_divisor: number; rounding: 'up'; armor_rule: 'higher' };
+  tradition_choice?: {
+    class_id: 'invoker'; options: string[]; effort: { skill_id: string; minimum: number };
+  };
   packages?: {
     required: boolean;
     options: Array<{ id: string; name: string; description: string; bonus: FocusBonus[] }>;
   };
   score_effect?: { kind: 'raise_to'; value: number; tags: string[]; optional: boolean } |
     { kind: 'cap_except_one'; value: number };
-  derived_bonus?: { base_attack_bonus?: number; attack?: number; saves?: Partial<Record<'physical' | 'evasion' | 'mental' | 'luck', number>>;
+  derived_bonus?: { base_attack_bonus?: number; attack?: number; saves?: SaveModifiers;
     encumbrance_str?: number; system_strain_max?: number };
+  conditional_saves?: ConditionalSaveModifier[];
   sheet_notes?: string[];
 };
 
@@ -50,6 +69,10 @@ export type FocusBonusChoice = {
   selected: string;
   limits: string;
 };
+
+export function focusCreationLevelReason(focus: Pick<FocusData, 'name' | 'level'>): string {
+  return (focus.level ?? 1) === 1 ? '' : `${focus.name}: only level-1 foci can be selected at character creation.`;
+}
 
 export function focusRequirementMet(rule: FocusData['requirements'][number], classes: Array<{ id: string; archetype: string }>, eligible: ReadonlySet<string>, selected: ReadonlySet<string>) {
   const hasClass = classes.some((item) => item.id === rule.id || item.archetype === rule.id);
@@ -82,6 +105,7 @@ export function eligibleSelectedFoci(ids: string[], foci: FocusData[], classes: 
     changed = false;
     for (const focus of selected) {
       if (eligible.has(focus.id)) continue;
+      if (focusCreationLevelReason(focus)) continue;
       if (originConflict && focus.type === 'origin') continue;
       if (focus.requirements.every((requirement) => focusRequirementMet(requirement, classes, eligible, requested))) {
         eligible.add(focus.id);

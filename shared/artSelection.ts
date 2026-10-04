@@ -1,7 +1,8 @@
 import { evaluateClassChoices } from './classSelection.js'
 import type { SelectableClass } from './classSelection.js'
+import type { FocusTraditionGrant } from './focusTraditions.js'
 
-export type ArtOption = { id: string; name: string; eng_name: string; class_id: string; description: string }
+export type ArtOption = { id: string; name: string; eng_name: string; class_id: string; description: string; focus_grants?: string[] }
 export type ArtClass = SelectableClass & { arts: boolean }
 export type ArtGroup = { id?: string; label?: string; choose: number; options: string[]; exclusive?: boolean }
 export type ArtRule = { fixed: string[]; choose: number; choice_groups: ArtGroup[] }
@@ -9,6 +10,7 @@ export type StartingArts = Array<{ character_level: number; classes: Record<stri
 export type ClassArtChoices = { groups: Record<string, string[]>; chosen: string[] }
 export type ArtChoices = Record<string, ClassArtChoices>
 export type ArtPlan = {
+  source?: FocusTraditionGrant
   classId: string
   name: string
   mode: 'partial' | 'full'
@@ -32,9 +34,9 @@ export function artGroupKey(group: ArtGroup, index: number) {
   return group.id ? `id:${group.id}` : `index:${index}`
 }
 
-export function getArtPlans(classIds: string[], classes: ArtClass[], rules: StartingArts, arts: ArtOption[]): ArtPlan[] {
+export function getArtPlans(classIds: string[], classes: ArtClass[], rules: StartingArts, arts: ArtOption[], traditions: FocusTraditionGrant[] = []): ArtPlan[] {
   const level = rules.find((entry) => entry.character_level === 1)
-  return [...new Set(classIds.slice(0, 2))].flatMap((id) => {
+  const plans = [...new Set(classIds.slice(0, 2))].flatMap<ArtPlan>((id) => {
     const option = classes.find((item) => item.id === id)
     if (!option?.arts) return []
     const mode = classIds.slice(0, 2).filter((item) => item === id).length === 2 ? 'full' : 'partial'
@@ -69,6 +71,21 @@ export function getArtPlans(classIds: string[], classes: ArtClass[], rules: Star
     }
     return [{ classId: id, name: option.eng_name, mode, fixed, groups, choose, options, issues, configured: issues.length === 0 }]
   })
+  if (evaluateClassChoices(classIds, classes).complete) {
+    for (const grant of traditions) {
+      const count = classIds.filter((id) => id === grant.classId).length
+      if (!count || grant.mode !== (count === 2 ? 'full' : 'partial') || plans.some((plan) => plan.classId === grant.traditionId)) continue
+      // Reuse the tradition's starting rules without changing the character's classes.
+      const ids = grant.mode === 'full' ? [grant.traditionId, grant.traditionId] : [grant.traditionId]
+      const borrowed = getArtPlans(ids, classes, rules, arts)[0]
+      const name = classes.find((item) => item.id === grant.traditionId)?.eng_name ?? grant.traditionId
+      plans.push(borrowed ? { ...borrowed, source: grant } : {
+        classId: grant.traditionId, name, mode: grant.mode, source: grant, fixed: [], choose: 0,
+        groups: [], options: [], configured: false, issues: [`${name}: art catalogue is missing.`],
+      })
+    }
+  }
+  return plans
 }
 
 export function artChoiceReason(plan: ArtPlan, choices: ClassArtChoices, groupKey: string | null, id: string) {
@@ -90,8 +107,8 @@ export function artChoiceReason(plan: ArtPlan, choices: ClassArtChoices, groupKe
   return ''
 }
 
-export function evaluateArtChoices(source: unknown, classIds: string[], classes: ArtClass[], rules: StartingArts, arts: ArtOption[]) {
-  const plans = getArtPlans(classIds, classes, rules, arts)
+export function evaluateArtChoices(source: unknown, classIds: string[], classes: ArtClass[], rules: StartingArts, arts: ArtOption[], traditions: FocusTraditionGrant[] = []) {
+  const plans = getArtPlans(classIds, classes, rules, arts, traditions)
   const issues = [...evaluateClassChoices(classIds, classes).issues]
   const selected: ArtChoices = {}
   const input = source === undefined ? {} : source
@@ -145,25 +162,25 @@ export function evaluateArtChoices(source: unknown, classIds: string[], classes:
     const learned = [...fixed, ...Object.values(choices.groups).flat(), ...choices.chosen]
     const required = plan.configured ? fixed.length + plan.choose + plan.groups.reduce((sum, group) => sum + group.choose, 0) : 0
     issues.push(...classIssues.map((issue) => issue.startsWith(plan.name) ? issue : `${plan.name}: ${issue}`))
-    return { classId: plan.classId, mode: plan.mode, fixed, choices, learned, required, complete: classIssues.length === 0, issues: classIssues }
+    return { classId: plan.classId, mode: plan.mode, ...(plan.source ? { source: plan.source } : {}), fixed, choices, learned, required, complete: classIssues.length === 0, issues: classIssues }
   })
   return { complete: issues.length === 0, issues, selected, classes: results, required: results.reduce((sum, result) => sum + result.required, 0) }
 }
 
-export function normalizeArtChoices(source: unknown, classIds: string[], classes: ArtClass[], rules: StartingArts, arts: ArtOption[]): ArtChoices {
-  return evaluateArtChoices(source, classIds, classes, rules, arts).selected
+export function normalizeArtChoices(source: unknown, classIds: string[], classes: ArtClass[], rules: StartingArts, arts: ArtOption[], traditions: FocusTraditionGrant[] = []): ArtChoices {
+  return evaluateArtChoices(source, classIds, classes, rules, arts, traditions).selected
 }
 
-export function restoreArtChoices(source: unknown, classIds: string[], classes: ArtClass[], rules: StartingArts, arts: ArtOption[]) {
-  const choices = normalizeArtChoices(source, classIds, classes, rules, arts)
+export function restoreArtChoices(source: unknown, classIds: string[], classes: ArtClass[], rules: StartingArts, arts: ArtOption[], traditions: FocusTraditionGrant[] = []) {
+  const choices = normalizeArtChoices(source, classIds, classes, rules, arts, traditions)
   return { choices, notice: source !== undefined && JSON.stringify(source) !== JSON.stringify(choices)
     ? 'Saved arts were rechecked. Invalid, duplicate, or excess choices were removed; review your class arts.' : '' }
 }
 
 export function toggleArtChoice(source: ArtChoices, classId: string, groupKey: string | null, id: string,
-  classIds: string[], classes: ArtClass[], rules: StartingArts, arts: ArtOption[]): ArtChoices {
-  const choices = normalizeArtChoices(source, classIds, classes, rules, arts)
-  const plan = getArtPlans(classIds, classes, rules, arts).find((item) => item.classId === classId)
+  classIds: string[], classes: ArtClass[], rules: StartingArts, arts: ArtOption[], traditions: FocusTraditionGrant[] = []): ArtChoices {
+  const choices = normalizeArtChoices(source, classIds, classes, rules, arts, traditions)
+  const plan = getArtPlans(classIds, classes, rules, arts, traditions).find((item) => item.classId === classId)
   const current = choices[classId]
   if (!plan || !current) return choices
   const picks = groupKey === null ? current.chosen : current.groups[groupKey]

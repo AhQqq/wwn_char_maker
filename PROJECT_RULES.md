@@ -4,6 +4,8 @@ This document defines the official character creation procedure.
 
 This project creates **1st-level characters only**. Creating higher-level characters or applying later character-level advancement is outside the builder's scope.
 
+The derived character sheet explicitly displays **레벨 1**. Only **focus level 1** may be selected at creation, even when a prerequisite focus and an unused focus pick are available.
+
 The builder must follow these rules exactly.
 Character schema is in `CHARACTER_SCHEMA.md`
 
@@ -28,10 +30,10 @@ Character schema is in `CHARACTER_SCHEMA.md`
 8. Start with the matched progression table's `hd`, then apply eligible encoded ability overrides. Use the maximum of the effective hit-dice expression, including its flat bonus or penalty, plus the final constitution modifier, to a minimum of 1 HP.
 9. Start with the matched progression table's `ab` value, apply encoded direct base attack bonus adjustments, and show ordinary unconditional focus attack bonuses separately in the total.
 10. Choose one equipment package from `frontend/data/starting_equipment.json` (item IDs resolve through `frontend/data/equipment.json`) or roll 3d6 * 10 silver pieces instead. These are alternative starting methods, not cumulative grants; both frontend and backend validate the choice.
-11. Equip owned armor, a shield, and an active weapon. Compute equipment AC using armor base (10 unarmored), a higher shield base or +1 when armor base equals/exceeds shield base, then the final DEX modifier. Do not use the removed placeholder armor bonuses or infer AC from encumbrance.
+11. Equip owned armor, a shield, and an active weapon. Use the higher of armor base (10 unarmored) and an eligible encoded focus base AC. Apply a higher shield base or +1 when the chosen base equals/exceeds shield base, then the final DEX modifier. Do not stack alternative bases, use removed placeholder armor bonuses, or infer AC from encumbrance.
 12. Record saving throw targets. Physical is 15 minus the better CON/STR modifier; Evasion uses INT/DEX; Mental uses CHA/WIS; Luck starts at 15. Subtract applicable unconditional focus save bonuses from these targets. Conditional save effects remain play notes.
 13. Give PC a name and a goal.
-14. Resolve starting class arts using `frontend/data/starting_arts.json` and the class art catalogues: receive fixed grants, resolve restricted choice groups, and choose any additional arts. Classes without arts skip this step.
+14. Resolve starting arts using `frontend/data/starting_arts.json` and the art catalogues: receive fixed grants, resolve restricted choice groups, and choose any additional arts. Characters with neither class arts nor focus-granted arts skip this step.
 15. As the final stage, spellcasters select spells to learn from `frontend/data/spells.json`: two first-level spells per spellcasting class slot, subject to that slot's school restrictions. Show only first-level spells. Invoker, Elementalist, Necromancer, and High Mage are spellcasters for this stage. Non-spellcasters skip it. See Spell Selection below.
 
 Steps must occur in this order.
@@ -84,6 +86,8 @@ After selecting a background, gain its `free_skill` and explicitly choose one of
 - **Roll:** allocate exactly three rolls between `growth` (d6) and `learn` (d8), in any combination, then roll all three dice. Roll against the original table rows, including repeated rows. Resolve every open-ended result before marking the background step complete.
 
 A `fixed_skill` grant is locked to its JSON ID. A tagged free skill or rolled skill grant requires a dropdown restricted to the matching skill tag; `any` allows all skill tags. Direct skill choices must also obey the shared skill-allotment limits in the Skills section. Rolled `tag_attr` results require an attribute choice matching `phys`, `mental`, or `any` from `attributes.json`.
+
+For a resolved `tag_attr` roll, add the original table row's positive integer `count` to the chosen attribute **score**, not its modifier. Sum multiple results on the same attribute up to the score maximum of 18. Preserve the initial allocation and optional rolled replacement in the draft. Recompute background increases from validated table/die/choice references on every evaluation, before focus score effects and modifier bonuses, then derive HP, AC, and saves. Changing the background, method, roll, or target removes the previous increase; inactive or invalid results and client-cached counts never grant points. The sheet shows the effective score with a compact allocation/background breakdown.
 
 The draft stores `backgroundMethod` (`pick` or `roll`), two `backgroundPicks`, three `backgroundRollTables`, and the rolled results with their `choiceId` values. Changing methods clears previous picks and rolls. Changing background also resets the method and free skill. Saved drafts preserve the active method; older drafts containing rolls reopen in roll mode.
 
@@ -174,9 +178,9 @@ This table reflects the current JSON. The JSON remains the source for selectable
 
 For the final spell-selection stage, the spellcasting class IDs are `invoker`, `elem`, `necro`, and `high`. Neither the `mage` archetype nor a `magic` skill bonus alone grants spell access. For example, Duelist has a mage archetype but is not one of these spellcasters, while Mageslayer grants the magic skill but does not gain spell selections.
 
-Invoker has `spells: true` in `classes.json` and participates in the final spell-selection stage, using the High Magic list.
+Invoker has `spells: true` in `classes.json` and participates in the final spell-selection stage, using the High Magic list by default. Traditional Education can expand its permitted schools without adding spell picks.
 
-Class arts are stored in `frontend/data/arts/<class_id>_arts.json`. Invoker, Warrior, and Expert have `arts: false` and require no starting arts. For arts-capable classes, missing catalogues or starting allowances are incomplete content, not a zero-art allowance.
+Class arts are stored in `frontend/data/arts/<class_id>_arts.json`. Invoker, Warrior, and Expert have `arts: false` and grant no class arts. Traditional Education is an explicit focus-based exception for Invoker. For arts-capable classes or focus-granted traditions, missing catalogues or starting allowances are incomplete content, not a zero-art allowance.
 
 Beastmaster has `spells: false` in the class JSON and does not receive spell picks. Its `mage` archetype still makes it incompatible with Mageslayer.
 
@@ -238,7 +242,7 @@ Look up `frontend/data/progression_tables.json` using both selected archetypes: 
 
 Ignore `am+e` for now. Preserve and enforce each `focus[].id` and `val`, not just their sum. A `warrior` pick requires a focus tagged `combat`; an `expert` pick requires a focus tagged `non-combat`; a `free` pick accepts any otherwise eligible focus. Tags are explicit data, not inferred from names, categories, descriptions, skill bonuses, or class requirements. Untagged foci and spell-only foci remain free-pick-only until the translator adds qualifying tags.
 
-Every selected instance and linked upgrade consumes exactly one compatible pick. Automatically match picks to allowances, reassigning flexible selections when needed so selection order does not incorrectly block a legal combination. Foci with both qualifying tags can use either restricted allowance, but never consume two picks for one instance. Penal's extra picks are free allowances. Unused restricted picks cannot pay for an incompatible focus.
+Every selected level-1 instance consumes exactly one compatible pick. Level-2 upgrades are unavailable at creation, even with spare picks. Automatically match picks to allowances, reassigning flexible selections when needed so selection order does not incorrectly block a legal combination. Foci with both qualifying tags can use either restricted allowance, but never consume two picks for one instance. Penal's extra picks are free allowances. Unused restricted picks cannot pay for an incompatible focus.
 
 Both frontend and backend use `shared/focusAllowances.ts` through the focus evaluator. Show used/total counts for each allowance and the assignment for each selected instance; locked options remain readable with a reason. Do not trust client-provided allowance assignments. Saved incompatible selections remain visible as incomplete and grant no focus effects until resolved. Class changes and removal recheck allowances and dependent upgrades, retaining earlier compatible selections where possible.
 
@@ -246,15 +250,17 @@ For example, a `w+w` character with a constitution modifier of +1 starts with `6
 
 ## Focus Requirements
 
-Read foci from `frontend/data/foci.json`. All entries in a focus's `requirements` array must be satisfied:
+Read foci from `frontend/data/foci.json`. Only entries with `level: 1` may be selected in this level-1 character builder. Higher-level entries remain in the catalogue for readable descriptions, with disabled selection controls and a creation-level restriction reason. Do not offer upgrade controls. Both frontend and backend enforce this independently of prerequisites, repeatability, and available picks. Modern saved instances and legacy focus IDs containing higher-level entries remain visible as invalid until removed; those entries grant no bonuses, abilities, notes, or extra picks. Removing a saved upgrade preserves its valid parent; removing the parent also removes dependent saved upgrades.
+
+All entries in a focus's `requirements` array must also be satisfied:
 
 - `is_class`: a selected class must match the required class ID or archetype.
 - `not_class`: no selected class may match the excluded class ID or archetype. Developed Attribute excludes the `mage` archetype, including partial and non-spellcasting mage classes.
-- `has_focus`: the referenced focus ID must be selected and eligible. This is how level-2 foci require their level-1 focus.
+- `has_focus`: the referenced focus ID must be selected and eligible. Retained level-2 catalogue entries use this to identify their parents, but meeting this prerequisite does not override the creation-level restriction.
 - `not_focus`: the referenced focus ID must not be selected. Penal and Developed Attribute explicitly exclude each other in both directions.
 - An empty requirements array imposes no additional prerequisite.
 
-Only one focus family with `type: "origin"` may be selected. A linked Level 1 and Level 2 count as one origin family, but each level costs one focus pick. Penal and Deepfolk cannot coexist. Different origin variants remain separate families; matching display names do not combine them. Unavailable origins remain visible with a lock reason.
+Only one level-1 focus family with `type: "origin"` may be selected. Linked higher levels remain part of that family in the catalogue but cannot be selected at creation. Penal and Deepfolk cannot coexist. Different origin variants remain separate families; matching display names do not combine them. Unavailable origins remain visible with a lock reason.
 
 Recheck focus eligibility and the progression allowance when either class slot changes or a prerequisite focus is removed. The backend must validate these requirements as well as the frontend.
 
@@ -262,7 +268,15 @@ Recheck focus eligibility and the progression allowance when either class slot c
 
 Selections use stable instance IDs, not just catalogue IDs. Only `repeatable: true` entries may be purchased more than once: Developed Attribute has an independent attribute choice per instance; Specialist has an independent nonexcluded skill per instance. Every Specialist instance must choose a different skill, even if the ordinary skill-allotment cap would permit another pick of that skill. Existing class restrictions, skill caps, and absolute modifier caps still apply.
 
-A Level 2 purchase links to one selected Level 1 instance through `parentInstanceId`. Specialist Level 2 inherits that instance's skill without granting a second skill allotment. Each instance can receive a particular upgrade once. Removing a parent removes its upgrades; removing only an upgrade preserves its parent and choices. Older drafts with unique focus IDs migrate without losing choices.
+`parentInstanceId` is retained for reading and removing upgrades in older drafts, not for purchasing Level 2 at creation. Legacy focus IDs migrate to instances without hiding invalid higher-level selections. Such upgrades never replace a parent's level-1 effects or inherit/apply bonuses in this builder. Repeated level-1 selections remain independent instances, not level-2 upgrades.
+
+Spirit Familiar Level 2 (`spirit_familiar2`) has **catalogue-only preparation for a future higher-level builder**, not an exception to the creation-level restriction. Its `repeatable: true` records the source rule; `requirements` still links to `spirit_familiar1`. The current evaluator does not accept repeated upgrades or save/apply their benefit choices.
+
+- `benefit_choices.target: "familiar"` makes all six benefits companion effects, not changes to the character's HP, attack bonus, skills, movement or languages. Keep them out of character `bonus` and `derived_bonus` fields.
+- `choose: 2` means exactly two benefits per Level 2 purchase. `unique_within_instance: true` requires different IDs in that purchase; `unique_across_instances: true` forbids reusing a benefit anywhere in the character's Spirit Familiar Level 2 acquisition history, not merely on one linked parent.
+- Stable option IDs are `hit_points`, `attack`, `background`, `appearance`, `flight` and `speech`. Each option retains its current local description. Descriptive HP/attack text is not an executable formula or a new ruling about the source's numerical wording.
+- The `background` benefit has `selection: { "kind": "background", "count": 1 }`: a future implementation must record one background ID from `backgrounds.json` for the familiar. Do not assume the character's own background or grant its starting skills; the benefit is a situational +1 check bonus for the familiar.
+- A future implementation must link each purchase to its Level 1 instance, charge its normal focus pick, persist independent benefit selections, enforce the global uniqueness rule, and handle removal/restoration. No such picker, choice persistence or companion calculation is implemented in this pass. Level 2 remains visible but disabled, including repeated or imported instances.
 
 Half-Elves may explicitly opt into the elven-parent package, granting both DEX modifier +1 and CON modifier -1 together; declining grants neither. Xenoblooded requires one package: heat, aquatic, gravity, or radiation. Gravity has two mutually exclusive orientations (STR +1 / DEX -1, or DEX +1 / STR -1), represented as separate package options. Package benefits remain linked and cannot be mixed. Non-numeric benefits appear as play notes using the current local descriptions.
 
@@ -270,13 +284,25 @@ Deepfolk may raise one physical attribute score below 14 to 14, or explicitly de
 
 An eligible Penal grants two additional free picks on top of the progression allowance and itself still costs one compatible pick. It cannot be repeated or combined with Developed Attribute. Its allowance is available as soon as it is selected, even before resolving its own bonus choices; unresolved choices still prevent completion. The API derives the allowance rather than trusting a cached limit. Removing Penal, or changing classes, rechecks typed allowances: retain earlier compatible instances, remove selections that cannot be funded and any dependent upgrades, then repeat until valid. Retained instances keep their choices.
 
-Warlike adds +1 to attacks, separately from the class base attack bonus. Usagi adds +1 to all saves and Penal adds +2; positive save bonuses reduce the displayed target numbers. Laborer's -2 penalty applies only to Mental saving rolls against mind-affecting effects, so it is a note, not an unconditional Mental save adjustment. Bison's encumbrance STR +4 and maximum System Strain +2 appear as separate sheet adjustments, not changes to actual STR. The builder does not track carried inventory, current System Strain, actions, durations, or crafting. Movement, automatic-save uses, vision/sunlight, social-check penalties, Specialist check dice, and alchemy recipes/laboratory benefits are readable play notes.
+Warlike adds +1 to attacks, separately from the class base attack bonus. Bison's encumbrance STR +4 and maximum System Strain +2 appear as separate sheet adjustments, not changes to actual STR. The builder does not track carried capacity, current System Strain, actions, durations, or crafting. Movement, automatic-save uses, vision/sunlight, social-check penalties, Specialist check dice, and alchemy recipes/laboratory benefits are readable play notes.
+
+### Direct Saving Throw Adjustments
+
+Art-granted foci use the same effect calculation as purchased foci, but are not charged to ordinary focus allowances; see Art-Granted Foci below. Their sources remain visible in the save breakdown.
+
+Use `derived_bonus.saves` for unconditional, signed saving-roll modifiers, keyed by `physical`, `evasion`, `mental`, or `luck`. For example, `"derived_bonus": { "saves": { "mental": -2 } }` is a Mental saving-roll penalty, not an attribute-modifier change. First calculate the level-1 target using final attribute modifiers: Physical `15 - max(STR, CON)`, Evasion `15 - max(DEX, INT)`, Mental `15 - max(WIS, CHA)`, Luck `15`. Then subtract the sum of direct saving-roll modifiers. A +2 bonus lowers the target by 2; a -2 penalty raises it by 2. Attribute modifier caps do not cap direct save adjustments. Do not apply an already-included bonus to the die as well as using the adjusted target.
+
+Usagi grants +1 to all saves and Penal +2. Oni (`oni1`), Laboring Breed (`focus_0511`), Halfmen (`halfmen1`), and Servile Breed (`focus_0531`) each impose an unconditional Mental saving-roll penalty of -2. The translator confirmed Halfmen's penalty is always active for the character, not a proximity toggle. Servile Breed's operative text says all Mental saves; its explanation about susceptibility does not narrow that scope. These penalties apply separately from WIS/CHA modifier changes.
+
+Use `conditional_saves` for threat-specific effects, e.g. `[{ "condition": "정신에 영향을 미치는 효과에 대항할 때", "saves": { "mental": -2 } }]`. Each entry has a nonempty display condition, a signed save map, and optional nonempty `scope` describing recipients/range. Laborer (`laborer1`) has -2 Mental only against mind-affecting effects; Dwarves (`dwarves_21`, not `dwarves1`) have +2 to all saves against hostile magic; Nullifier (`nullifier1`) grants +2 against magical effects to the character and allies within 20 feet. Show these separately and never include them in ordinary target totals. Do not assume overlapping conditional effects stack. Nullifier's corrected daily first-failure conversion is a play note, not another constant bonus.
+
+Only eligible, funded level-1 instances supply save sources. `shared/savingThrows.ts` provides the shared frontend/backend target calculation; the API returns attribute-based targets, signed bonuses, final targets, and unconditional/conditional source records. Recompute from the current draft on selection, removal, class changes and restoration; ignore client-supplied totals or condition switches. The frontend previews current selections even while API evaluation is pending. Missing conditions, unknown save keys, and non-integer modifiers are data errors. The sheet shows concise source details; sign conventions and application rules live on the separate rules page. Rerolls, automatic successes, ally aura tracking and threat adjudication remain play-time actions, not a simulator.
 
 ### Direct Base Attack Bonus Adjustments
 
 Use `derived_bonus.base_attack_bonus` as a signed integer adjustment to the progression base. For example, `"derived_bonus": { "base_attack_bonus": -2 }` is a reusable focus rule, distinct from `derived_bonus.attack` (an ordinary attack bonus). Only eligible, funded focus instances contribute. Recompute from the progression value on every evaluation; never modify the stored progression or accumulate adjustments in the draft.
 
-Wrathful Mountain Style Level 1 (`wrathful_mountain_style1`) applies -2. Its linked Level 2 retains Level 1, so it must not encode another -2. Removing only Level 2 keeps the penalty; removing Level 1 also removes its upgrade and restores the unadjusted progression base. Base attack may be negative. The sheet shows the original progression value, each adjustment and its source, the adjusted base, and the total after ordinary focus attack bonuses.
+Wrathful Mountain Style Level 1 (`wrathful_mountain_style1`) applies -2. Its linked Level 2 is retained as reference data and must not encode another -2, but cannot be selected at creation. Removing an invalid saved Level 2 keeps the valid Level 1 penalty; removing Level 1 also removes its saved upgrade and restores the unadjusted progression base. Base attack may be negative. The sheet shows the original progression value, each adjustment and its source, the adjusted base, and the total after ordinary focus attack bonuses.
 
 ## Focus Bonuses and Review Scope
 
@@ -374,9 +400,34 @@ Examples from the current JSON:
 
 The frontend and backend share evaluation in `shared/artSelection.ts`. The picker provides full descriptions, disabled choices with reasons, and separate counts for fixed grants and choices. The derived sheet lists granted and chosen arts; the backend's arts checkpoint requires all configured choices to be resolved.
 
+### Art-Granted Foci
+
+Antimage (`antimage`, 항마도) in `frontend/data/arts/mageslayer_arts.json` encodes `"focus_grants": ["nullifier1"]`. As a fixed starting art for a valid partial Mageslayer, it automatically grants Nullifier level 1 without consuming a Warrior, Expert, or Free pick. The translator confirmed that the creation-time level-1 restriction still applies: Antimage does not upgrade Nullifier to level 2, and its general-prose benefit for an already-level-2 Nullifier is deferred until a future higher-level builder. The remaining 무화사 reference has been corrected to 무화자; the general advancement description is otherwise preserved.
+
+Resolve native class arts through `shared/artFocusGrants.ts` before evaluating focus effects. Require a legal class pair, a configured and valid art selection for the granting class, an unambiguous art/focus reference, and a level-1 focus satisfying class restrictions. Do not waive Nullifier's mage exclusion or Mageslayer's incompatible-class rules. This pass resolves native class arts only; focus-borrowed arts must not recursively grant foci and create a focus/art dependency cycle.
+
+Generated instances have reserved IDs and `grantedBy` art sources, separate from player-owned `focusInstances`. Derive them on every evaluation rather than persisting or trusting client-supplied grants. Paid duplicate Nullifier level-1 picks are removed before allowance assignment and refunded without increasing the budget. The released picks retain their existing typed allowance constraints. Effects apply once, even when multiple valid art sources grant the same focus; keep all contributing sources. Invalid paid choices may block character completion but do not remove an independently valid automatic grant.
+
+Display automatic grants with class/art provenance in the picker and sheet, including the conditional save breakdown. They cannot be individually deselected or repurchased; level-2 entries stay readable but unavailable. Class changes and saved-draft restoration remove paid duplicates and obsolete choice data. Losing the granting class/art removes its source and the effect when no source remains; a refunded former selection is not silently restored as a new paid purchase. Ordinary player focus selections are still required under the existing creation checkpoint; an automatic grant does not spend or replace that entitlement.
+
+Only paid instances enter ordinary allowance counts. Eligible generated instances join `applied` for the same bonus, ability, note and save evaluation as other foci. The backend reports `grantedInstances` and `refundedInstances` separately from paid `instances`. Missing/ambiguous references, malformed grant lists and level-2 grant references produce data issues rather than an invented alternate focus. Regression source is in `backend/src/artFocusGrants.test.ts`; tests, builds, type checks and browser checks were not run for this pass.
+
 Drafts store `artChoicesByClass`, keyed by distinct class ID, with `groups` and `chosen` selections. Fixed grants are derived from the JSON, never trusted from client submissions. Class changes and saved-draft restoration retain still-legal choices, discard unavailable or excess picks, and show a review notice when choices are rechecked. Existing drafts without arts start with empty choices plus their automatic grants.
 
-This stage records arts; it does not implement mechanical effects described only in prose, such as effort, damage, healing, or special actions.
+This stage records arts; it does not implement mechanical effects described only in prose, such as effort expenditure, damage, healing, or special actions. Traditional Education's encoded Effort maximum is calculated separately as described below.
+
+### Traditional Education
+
+`traditional_education1` is an Invoker-only, non-repeatable level-1 focus. Its `tradition_choice` in `foci.json` declares `class_id: "invoker"`, allowed tradition IDs (`high`, `elem`, `necro`), and `effort: { "skill_id": "magic", "minimum": 1 }`. It consumes an ordinary eligible focus allowance; it does not change the character's actual class IDs, skill grants, abilities, progression, or class-build name.
+
+- Require one explicit tradition in `focusRuleChoices[instanceId].traditionId`. Missing, malformed, or unsupported choices block completion and grant no tradition benefits. Do not silently default old drafts to a tradition.
+- Use the chosen tradition's level-1 `starting_arts.json` rule: `full` for Invoker/Invoker and `partial` for one Invoker slot. Apply once, including fixed grants and restricted choices. Never use a partial rule as fallback for missing full rules.
+- High Mage grants one chosen art to a partial Invoker or two to a full Invoker. Necromancer grants one in either case. Elementalist grants Elemental Resilience and Elemental Sparks plus one choice in either case, according to the current starting-arts data.
+- Learn duplicate arts only once, with no replacement picks. The borrowed tradition is not a second selected class. Track its focus instance as the source; do not stack a second art plan for the same tradition.
+- Expand school access only for Invoker slots: High Magic plus the chosen specialist school, if any. Partial Invoker still learns exactly two distinct first-level spells; full Invoker learns four, two per slot. Choosing High Mage adds arts but no new school beyond High Magic. It grants no later arts from this tradition.
+- Maximum Effort is `max(1, Magic skill level)`, using the final validated skill level, not allotment count, advancement points, or an attribute modifier. Show the maximum and Traditional Education as its source on the derived sheet. Current creation skill caps mean this maximum is 1 at level 1. Spending, recovery, and interaction with another class's Effort are not modeled or combined by this implementation.
+
+Frontend and backend derive grants from eligible, funded focus instances and a legal actual class pair using `shared/focusTraditions.ts`. API requests cannot supply trusted grants or cached Effort totals. Store chosen arts under the tradition's ID in `artChoicesByClass`; derive fixed arts from the catalogue. Restoring drafts and changing the focus, tradition, or classes rechecks arts and spell choices, retaining only still-legal selections. Removing the granting focus removes its art and school access and its displayed Effort maximum.
 
 ---
 
@@ -413,7 +464,7 @@ The existing Korean category values are shown below as JSON Unicode escapes to k
 | Elementalist magic | `\uc6d0\uc18c\ub9c8\ubc95` | `elem` only |
 | Necromancer magic | `\uc0ac\ub839\ub9c8\ubc95` | `necro` only |
 
-All four spellcasters can learn High Magic. Elementalist spells can only be selected for an Elementalist slot, and Necromancer spells can only be selected for a Necromancer slot. Invoker and High Mage slots therefore use the High Magic list, not unrestricted access to every category.
+All four spellcasters can learn High Magic. Elementalist and Necromancer slots can also select their own specialist spells. Invoker and High Mage slots use only High Magic by default. Traditional Education permits Invoker slots to select spells from their explicitly chosen tradition as well; it does not grant unrestricted access to every category or change another class slot's schools.
 
 ## Per-Class Picks
 
@@ -457,7 +508,13 @@ Purchases save only catalogue IDs and positive integer quantities. Spend package
 
 The player chooses one worn armor, one held shield, and one active weapon from owned equipment. Empty slots mean unarmored, no shield, and unarmed; package items are not auto-equipped. Removing the last purchased copy clears its equipped selection in the UI; the API rejects stale/unowned selections. A two-handed active weapon conflicts with a held shield, and a shield used as a weapon must be the held shield. Do not impose package-name class restrictions or infer focus/art exceptions from description text.
 
-With the translator's confirmation, calculate AC as follows: take armor base (10 when unarmored); if the held shield's base is higher, use the shield base instead; otherwise add the shield's +1 to armor base. Add final DEX after resolving armor/shield. The sheet shows that breakdown and the armor's Sneak/Exert check penalties separately from learned skill levels. The first-shock protection of shields and other situational properties remain readable play rules. Weapon profiles show base values, not fully derived attack/damage rolls.
+Use **AC** consistently in all user-facing labels, descriptions, errors, and rules. The initial empty loadout has AC **10 + final DEX modifier**, even before starting equipment or purchases are complete. Unfinished or invalid inventory choices still block equipment completion but do not erase inherent unarmored AC. Equipping any non-inherent armor, shield, or weapon still requires valid inventory and ownership; malformed loadouts, invalid DEX, or unowned equipment must not silently fall back to unarmored AC. While awaiting server evaluation, the sheet previews AC from the same shared equipment evaluator using the current draft rather than displaying a stale value.
+
+With the translator's confirmation, calculate AC as follows: compare armor base (10 when unarmored) with eligible encoded focus bases and use the highest, without adding them together. If the held shield's base is higher, use the shield base instead; otherwise add the shield's +1 to the selected base. Add final DEX afterward. The sheet shows the actual base source and that breakdown. Always retain the worn armor's Sneak/Exert check penalties, separately from learned skill levels, even when a focus supplies the better base. The first-shock protection of shields and other situational properties remain readable play rules. Weapon profiles show base values, not fully derived attack/damage rolls.
+
+Impervious Defense (`impervious_defense1`, 불괴) encodes `base_ac: { "base": 15, "level_divisor": 2, "rounding": "up", "armor_rule": "higher" }` in `foci.json`. It grants base AC `15 + ceil(character level / 2)`, or **16 at character level 1**. This replaces a weaker base, not the DEX modifier, and is not a flat AC bonus. The translator confirmed that better worn armor still wins; shields and final DEX apply normally. For example, with DEX +1, the focus gives AC 17 without a shield or AC 18 with an ordinary held shield. Base-17 armor plus that shield and DEX +1 gives AC 19, not the sum of armor and focus bases.
+
+`shared/focusArmorClass.ts` derives alternative bases only from eligible, funded level-1 focus instances. `shared/focusCreation.ts` reports malformed base rules as errors; `shared/equipment.ts` compares the resulting candidates and records the winning armor, shield, or focus source. The application always evaluates at character level 1 and ignores client-cached bases/totals or submitted character levels. A legal class pair is required for focus AC. Removing the focus, changing eligibility or equipment, and restoring saved drafts recalculate AC from source data. A valid focus base works before starting equipment is chosen, without marking that stage complete; invalid loadouts, ownership, DEX, and hand-use conflicts still leave AC unresolved. No draft migration or new player choice is needed. Level-2 focus selection remains unavailable, and its daily damage-negation effect is not automated.
 
 Show owned items, quantities, purchases, remaining coins, and listed loads on the derived sheet. Package encumbrance already includes each row's quantity and must not be multiplied again. Purchase lots use catalogue load and explicit three-item/five-item bundling, without rewriting package rows. Preserve `null` as unlisted and flag ambiguous footnotes. These annotations are not carried-load calculations: readied/stowed/transported assignments, coin load, and inventory capacity are not tracked.
 
@@ -473,9 +530,9 @@ A character is valid if:
 - Neither selected class excludes its partner through `incompatible_archetypes` or `incompatible_classes`. Check restrictions in both directions regardless of slot order.
 - Each arts-capable class has a configured starting rule and catalogue. All restricted and additional art allowances are filled exactly, without unknown, wrong-class, duplicate, or fixed-as-choice selections. Ineligible full classes and missing full rules cannot grant arts.
 - The two class archetypes resolve to a supported progression entry, excluding `am+e`.
-- Each selected focus exists in `frontend/data/foci.json` and satisfies all of its requirements.
-- Each selected focus instance (including upgrades) is assigned exactly one compatible `warrior`, `expert`, or `free` allowance from the matched progression plus eligible extra free picks. A spare restricted pick does not permit an incompatible focus.
-- At most one origin family is selected; linked upgrades count as that family but require their own picks and valid parent instances.
+- Each selected focus exists in `frontend/data/foci.json`, has focus level 1, and satisfies all of its requirements. Higher-level selections are rejected even with a valid parent and enough picks.
+- Each selected level-1 focus instance is assigned exactly one compatible `warrior`, `expert`, or `free` allowance from the matched progression plus eligible extra free picks. A spare restricted pick does not permit an incompatible focus.
+- At most one origin family is selected; higher-level origin upgrades are not available at creation.
 - Nonrepeatable foci are not duplicated. Specialist instances choose distinct legal skills. All required packages, score choices, and encoded bonus choices are resolved.
 - Every skill starts at -1 and no starting skill exceeds level 1, with allotments counted across all creation sources.
 - No direct voluntary skill choice is a third or later allotment to that skill.

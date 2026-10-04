@@ -1,9 +1,10 @@
 import { nameFor } from './korean'
-import { eligibleSelectedFoci, focusRequirementMet, originFamilyId } from '../../shared/focusBonuses.js'
+import { eligibleSelectedFoci, focusCreationLevelReason, focusRequirementMet, originFamilyId } from '../../shared/focusBonuses.js'
 import type { FocusBonus, FocusData } from '../../shared/focusBonuses.js'
 import type { FocusInstance } from '../../shared/focusCreation.js'
 import { evaluateFocusInstances } from '../../shared/focusCreation.js'
 import type { FocusBudget } from '../../shared/focusAllowances.js'
+import type { ArtFocusGrant, ArtFocusSource } from '../../shared/artFocusGrants.js'
 export type { FocusBonus } from '../../shared/focusBonuses.js'
 
 export type FocusOption = FocusData & {
@@ -22,6 +23,10 @@ export type FocusOption = FocusData & {
 
 export type FocusClass = { id: string; name: string; eng_name: string; archetype: string }
 export type FocusFamily = { id: string; category: string; levels: FocusOption[] }
+
+export function focusGrantLabel(sources: ArtFocusSource[]) {
+  return sources.map((source) => `${nameFor(source.classId)} → ${source.name}`).join(', ')
+}
 
 export function focusInstanceLabel(instance: FocusInstance, instances: FocusInstance[], foci: FocusOption[]) {
   const focus = foci.find((item) => item.id === instance.focusId)
@@ -69,6 +74,8 @@ export function requirementLabel(rule: FocusOption['requirements'][number], foci
 }
 
 export function focusLockReasons(focus: FocusOption, selected: string[], foci: FocusOption[], selectedClasses: FocusClass[], classes: FocusClass[], limit: number) {
+  const levelReason = focusCreationLevelReason(focus)
+  if (levelReason) return [levelReason]
   const eligible = eligibleIds(selected, foci, selectedClasses)
   const requested = new Set(selected)
   const reasons = focus.requirements.filter((rule) => !focusRequirementMet(rule, selectedClasses, eligible, requested))
@@ -81,16 +88,20 @@ export function focusLockReasons(focus: FocusOption, selected: string[], foci: F
   return reasons
 }
 
-export function focusInstanceLockReasons(focus: FocusOption, instances: FocusInstance[], foci: FocusOption[], selectedClasses: FocusClass[], classes: FocusClass[], budget: FocusBudget) {
+export function focusInstanceLockReasons(focus: FocusOption, instances: FocusInstance[], foci: FocusOption[], selectedClasses: FocusClass[], classes: FocusClass[], budget: FocusBudget, grants: ArtFocusGrant[] = []) {
+  const levelReason = focusCreationLevelReason(focus)
+  if (levelReason) return [levelReason]
+  const grant = grants.find((item) => item.focusId === focus.id)
+  if (grant) return [`${focusGrantLabel(grant.grantedBy)}에서 자동 습득합니다. 선택권을 소모하지 않으며 중복 선택할 수 없습니다.`]
   if (!focus.repeatable && instances.some((item) => item.focusId === focus.id)) return []
-  const reasons = focusLockReasons(focus, instances.map((item) => item.focusId), foci, selectedClasses, classes, Infinity)
+  const reasons = focusLockReasons(focus, [...instances, ...grants].map((item) => item.focusId), foci, selectedClasses, classes, Infinity)
   if (reasons.length) return reasons
   const parentId = focus.level > 1 ? focus.requirements.find((rule) => rule.condition === 'has_focus')?.id : undefined
   const parent = instances.find((item) => item.focusId === parentId)
   let instanceId = 'preview_focus'
   while (instances.some((item) => item.instanceId === instanceId)) instanceId += '_'
   const candidate = { instanceId, focusId: focus.id, ...(parent ? { parentInstanceId: parent.instanceId } : {}) }
-  return evaluateFocusInstances([...instances, candidate], undefined, foci, selectedClasses, budget).issues
+  return evaluateFocusInstances([...instances, candidate], undefined, foci, selectedClasses, budget, grants).issues
 }
 
 export function normalizeFocusSelection(ids: string[], foci: FocusOption[], classes: FocusClass[], limit: number) {

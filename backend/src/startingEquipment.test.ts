@@ -127,5 +127,6 @@ test('API ignores legacy armor and cached grants, and defaults owned but unequip
   assert.equal(result.stepStatus.find((step) => step.key === 'equipment')?.complete, true);
   const legacy = evaluateCharacter({ armor: input.armor });
   assert.equal(legacy.equipmentSelection.complete, false);
-  assert.equal(legacy.derived.ac, null);
+  assert.equal(legacy.derived.ac, 10 + legacy.modifiers.DEX);
+  assert.equal(legacy.armorClass.complete, true);
 });

@@ -1,3 +1,4 @@
+import { RulesLink } from './RulesLink'
 import { ko } from './korean'
 import { evaluateStartingEquipment } from '../../shared/startingEquipment'
 import type { EquipmentDefinition, EquipmentEvaluation, EquipmentPackage, GrantedEquipment, StartingEquipmentChoice } from '../../shared/startingEquipment'
@@ -22,9 +23,9 @@ export function EquipmentPicker({ choice, packages, equipment, evaluation, notic
   onChange: (choice: StartingEquipmentChoice) => void
   onRoll: () => void
 }) {
-  return <section className="card equipment-selection" aria-labelledby="equipment-selection-title">
-    <div className="card-header"><div><p className="step-label">10단계</p><h2 id="equipment-selection-title">시작 장비 선택</h2></div></div>
-    <p className="support-text">장비 꾸러미 하나를 받거나, 대신 3d6 &times; 10은화를 받습니다. 꾸러미 이름은 추천 용도이며 클래스 제한이 아닙니다. 획득 방식이나 꾸러미를 바꾸면 지급 장비, 구매 내역, 착용 장비가 초기화됩니다.</p>
+  return <section className="card equipment-selection creation-section" id="stage-equipment" aria-labelledby="equipment-selection-title">
+    <div className="card-header"><div><p className="step-label">04 / 여정의 준비물</p><h2 id="equipment-selection-title">시작 장비 선택</h2></div><RulesLink topic="equipment" /></div>
+    <p className="support-text">꾸러미 또는 3d6 × 10은화 중 하나를 받습니다. 방식을 바꾸면 구매·착용 내역이 초기화됩니다.</p>
     {notice && <p className="spell-notice" role="status">{ko(notice)}</p>}
     <div className="segmented equipment-method" role="group" aria-label="시작 장비 획득 방식">
       <button type="button" className={choice.method === 'package' ? 'active' : ''} aria-pressed={choice.method === 'package'}
@@ -55,13 +56,12 @@ export function EquipmentPicker({ choice, packages, equipment, evaluation, notic
     </div>}
     {choice.method === 'silver' && <div className="roll-card">
       <h3>시작 자금</h3>
-      <p className="support-text">육면체 주사위 세 개의 합에 10을 곱한 은화를 받습니다. 꾸러미에 포함된 은화를 포함해 꾸러미 전체를 대체합니다.</p>
       <button type="button" onClick={onRoll}>{choice.rolls.length ? '3d6 다시 굴리기 (구매·착용 초기화)' : '3d6으로 시작 은화 굴리기'}</button>
       <div role="status" aria-live="polite">
         {evaluation.complete ? <p className="equipment-roll-result">({choice.rolls.join(' + ')}) &times; 10 = <strong>{evaluation.silver}은화</strong></p>
-          : <p className="support-text">아직 굴리지 않았습니다. 주사위 결과는 캐릭터 초안에 저장되며, 은화 총액을 직접 수정할 수는 없습니다.</p>}
+          : <p className="support-text">아직 굴리지 않았습니다.</p>}
       </div>
-      <p className="support-text">이 방식은 은화만 지급합니다. 아래 장비 목록에서 구매한 뒤, 착용하거나 손에 들 장비를 선택하세요.</p>
+      <p className="support-text">아래에서 필요한 장비를 구매하고 착용하세요.</p>
     </div>}
     {evaluation.issues.length > 0 && <ul className="issue-list" role="status">{evaluation.issues.map((issue) => <li key={issue}>{ko(issue)}</li>)}</ul>}
   </section>

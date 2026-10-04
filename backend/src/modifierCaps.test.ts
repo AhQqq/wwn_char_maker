@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { test } from 'node:test';
 import { evaluateCharacter } from './character.js';
+import { createDataReader } from './dataReader.js';
 import { evaluateFocusBonuses, normalizeFocusBonusChoices } from '../../shared/focusBonuses.js';
 import type { FocusBonus, FocusData } from '../../shared/focusBonuses.js';
 
@@ -14,6 +17,77 @@ const focus = (id: string, ...bonus: FocusBonus[]): FocusData => ({ id, name: id
 const evaluate = (selected: FocusData[], choices: unknown = {}, base: Record<string, number> = zero) =>
   evaluateFocusBonuses(selected, choices, skills, attributes, base);
 const select = (...ids: string[]) => ids.map((id) => foci.find((item) => item.id === id)!);
+
+test('focus data refreshes after edits without restarting, and invalid JSON never uses stale rules', (t) => {
+  const directory = mkdtempSync(join(tmpdir(), 'wwn-focus-data-'));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const path = join(directory, 'foci.json');
+  const read = createDataReader();
+  const original = { id: 'developed_attribute1', tags: [], max: 2 };
+  let revision = 0;
+  const save = (contents: string) => {
+    writeFileSync(path, contents);
+    const time = new Date(1700000000000 + revision++ * 1000);
+    utimesSync(path, time, time);
+  };
+  save(JSON.stringify(original));
+  const first = read<typeof original>(directory, 'foci.json');
+  assert.deepEqual(first, original);
+  assert.equal(read(directory, 'foci.json'), first);
+
+  const changed = { ...original, tags: ['non-combat'], max: 3 };
+  save(JSON.stringify(changed));
+  assert.deepEqual(read(directory, 'foci.json'), changed);
+  const sameSizeEdit = { ...changed, max: 4 };
+  save(JSON.stringify(sameSizeEdit));
+  assert.deepEqual(read(directory, 'foci.json'), sameSizeEdit);
+  save('{');
+  assert.throws(() => read(directory, 'foci.json'), SyntaxError);
+  assert.throws(() => read(directory, 'foci.json'), SyntaxError);
+  save(JSON.stringify(changed));
+  assert.deepEqual(read(directory, 'foci.json'), changed);
+  rmSync(path);
+  assert.throws(() => read(directory, 'foci.json'));
+});
+
+test('Developed Attribute uses the expert pick and raises DEX to +3 after background growth', () => {
+  const draft = {
+    name: 'DEX cap', goal: 'Explore', attributeMethod: 'rolled',
+    attributes: { STR: 14, DEX: 15, CON: 12, INT: 11, WIS: 10, CHA: 12 }, attributeOverride: '',
+    classChoices: ['warrior', 'expert'], background: 'courier', backgroundSkill: 'survive',
+    backgroundMethod: 'roll', backgroundRollTables: ['growth', 'growth', 'growth'],
+    backgroundRollResults: Array.from({ length: 3 }, () => ({ table: 'growth', roll: 1, choiceId: 'DEX' })),
+    focusInstances: [
+      { instanceId: 'assault', focusId: 'shocking_assault1' },
+      { instanceId: 'developed', focusId: 'developed_attribute1' },
+      { instanceId: 'elf', focusId: 'elves1' },
+    ],
+    focusBonusChoices: { assault: { 0: ['stab'] }, developed: { 0: ['DEX'] }, elf: { 0: ['stab'] } },
+    freeSkill: 'administer', startingEquipment: { method: 'silver', rolls: [1, 1, 1] },
+  };
+  const result = evaluateCharacter(draft);
+  assert.equal(result.valid, true, result.issues.join('\n'));
+  assert.deepEqual(result.focusSelection.allowances.assignments, [
+    { instanceId: 'assault', type: 'warrior' },
+    { instanceId: 'developed', type: 'expert' },
+    { instanceId: 'elf', type: 'free' },
+  ]);
+  assert.equal(result.attributes.DEX, 18);
+  assert.equal(result.baseModifiers.DEX, 2);
+  assert.equal(result.focusModifierBonuses.DEX, 1);
+  assert.deepEqual(result.modifierCaps.DEX, { min: -2, max: 3 });
+  assert.equal(result.modifiers.DEX, 3);
+  assert.equal(result.derived.ac, 13);
+  assert.equal(result.derived.evasionSave, 12);
+
+  const moved = evaluateCharacter({ ...draft, focusBonusChoices: { ...draft.focusBonusChoices, developed: { 0: ['STR'] } } });
+  assert.equal(moved.modifierCaps.DEX?.max, 2);
+  assert.equal(moved.modifiers.DEX, 2);
+  assert.equal(moved.modifierCaps.STR?.max, 3);
+  const removed = evaluateCharacter({ ...draft, focusInstances: draft.focusInstances.filter((item) => item.instanceId !== 'developed') });
+  assert.equal(removed.modifierCaps.DEX?.max, 2);
+  assert.equal(removed.modifiers.DEX, 2);
+});
 
 test('all migrated cap metadata preserves bonuses and choices without legacy fields', () => {
   const expected = {

@@ -1,32 +1,33 @@
 import { ko, nameFor, rulesText } from './korean'
-import type { FocusClass, FocusOption } from './focusSelection'
-import { focusInstanceLabel } from './focusSelection'
-import { evaluateFocusInstances } from '../../shared/focusCreation'
+import type { FocusOption } from './focusSelection'
+import { focusGrantLabel, focusInstanceLabel } from './focusSelection'
+import { focusCreationLevelReason } from '../../shared/focusBonuses'
 import type { FocusInstance, FocusRuleChoice, FocusRuleChoices } from '../../shared/focusCreation'
 import { FOCUS_ALLOWANCE_LABELS } from './korean'
-import type { FocusAllowance, FocusAllowanceType } from '../../shared/focusAllowances'
+import type { FocusAllowanceType } from '../../shared/focusAllowances'
 
-export function FocusInstances({ instances, foci, classes, budget, assignments, ruleChoices, scores, attributes, onRemove, onUpgrade, onRuleChoice }: {
+export function FocusInstances({ instances, foci, assignments, ruleChoices, scores, attributes, onRemove, onRuleChoice }: {
   instances: FocusInstance[]
   foci: FocusOption[]
-  classes: FocusClass[]
-  budget: FocusAllowance[]
   assignments: Array<{ instanceId: string; type: FocusAllowanceType }>
   ruleChoices: FocusRuleChoices
   scores: Record<string, number>
   attributes: Array<{ id: string; name: string; tags: string[] }>
   onRemove: (id: string) => void
-  onUpgrade: (parentId: string, focusId: string) => void
   onRuleChoice: (id: string, key: keyof FocusRuleChoice, value: string) => void
 }) {
   return <section aria-label="선택한 포커스 목록" className="focus-bonus-list">
-    <h3>선택한 포커스</h3>
-    <p className="support-text">기원 포커스는 연결된 상위 레벨을 포함해 한 계열만 선택할 수 있습니다. 각각의 선택과 레벨 향상에 선택권 하나가 필요합니다. 여기에서 개별 포커스를 해제하거나 향상할 수 있습니다.</p>
+    <h3>습득한 포커스</h3>
     {instances.map((instance) => {
       const focus = foci.find((item) => item.id === instance.focusId)
       const label = focusInstanceLabel(instance, instances, foci)
+      const levelReason = focus && focusCreationLevelReason(focus)
+      if (levelReason) return <section key={instance.instanceId} className="info-panel focus-bonus-panel" aria-label={`${label} 선택 오류`}>
+        <h4>{label}</h4>
+        <p className="skill-choice-error">{ko(levelReason)} 보너스는 적용되지 않습니다. 저장된 선택을 해제하세요.</p>
+        <button type="button" onClick={() => onRemove(instance.instanceId)} aria-label={`${label} 해제`}>이 포커스 해제</button>
+      </section>
       const choice = ruleChoices[instance.instanceId] ?? {}
-      const upgrades = foci.filter((item) => item.level === (focus?.level ?? 1) + 1 && item.requirements.some((rule) => rule.condition === 'has_focus' && rule.id === focus?.id))
       const effect = focus?.score_effect
       const physical = effect?.kind === 'raise_to' ? attributes.filter((item) => item.tags.some((tag) => effect.tags.includes(tag)) && scores[item.id] < effect.value) : []
       const high = effect?.kind === 'cap_except_one' ? attributes.filter((item) => scores[item.id] > effect.value) : []
@@ -34,24 +35,23 @@ export function FocusInstances({ instances, foci, classes, budget, assignments, 
       const assigned = assignments.find((item) => item.instanceId === instance.instanceId)
       return <section key={instance.instanceId} className="info-panel focus-bonus-panel" aria-label={`${label} 선택`}>
         <h4>{label}</h4>
-        <p className={assigned ? 'support-text' : 'skill-choice-error'}>{assigned ? `${FOCUS_ALLOWANCE_LABELS[assigned.type]} 선택권을 사용합니다.` : '배정할 수 있는 선택권이 없습니다. 아래 선택 오류를 확인하세요.'}</p>
+        {instance.grantedBy ? <p className="support-text">{focusGrantLabel(instance.grantedBy)} · 자동 습득 · 선택권 소모 없음 / 개별 해제 불가</p>
+          : <p className={assigned ? 'support-text' : 'skill-choice-error'}>{assigned ? `${FOCUS_ALLOWANCE_LABELS[assigned.type]} 선택권을 사용합니다.` : '배정할 수 있는 선택권이 없습니다. 아래 선택 오류를 확인하세요.'}</p>}
         {parent && <p>{focusInstanceLabel(parent, instances, foci)}에서 향상되었습니다.{foci.find((item) => item.id === parent.focusId)?.unique_skill ? ' 기존에 선택한 기술을 이어받으며 추가 기술을 얻지는 않습니다.' : ''}</p>}
-        <div className="button-row">
+        {!instance.grantedBy && <div className="button-row">
           <button type="button" onClick={() => onRemove(instance.instanceId)} aria-label={`${label} 해제`}>이 포커스{instances.some((item) => item.parentInstanceId === instance.instanceId) ? '와 연결된 상위 레벨' : ''} 해제</button>
-          {upgrades.map((upgrade) => {
-            const already = instances.some((item) => item.focusId === upgrade.id && item.parentInstanceId === instance.instanceId)
-            let previewId = 'preview_upgrade'
-            while (instances.some((item) => item.instanceId === previewId)) previewId += '_'
-            const candidate = { instanceId: previewId, focusId: upgrade.id, parentInstanceId: instance.instanceId }
-            const preview = evaluateFocusInstances([...instances, candidate], undefined, foci, classes, budget)
-            const allowed = !already && preview.complete
-            const reasonId = `upgrade-${instance.instanceId}-${upgrade.id}`
-            return <div key={upgrade.id}><button type="button" disabled={!allowed} aria-describedby={reasonId} onClick={() => onUpgrade(instance.instanceId, upgrade.id)} aria-label={`${label}을 ${upgrade.level}레벨로 향상`}>
-              {already ? `${upgrade.level}레벨 습득함` : `${upgrade.level}레벨로 향상 (선택권 1개)`}
-            </button><p id={reasonId} className="support-text">{already ? '이미 이 상위 레벨을 습득했습니다.' : allowed ? '조건에 맞는 포커스 선택권 하나를 사용합니다.' : `선택 불가: ${preview.issues.map(ko).join(' ')}`}</p></div>
-          })}
-        </div>
-        {Boolean(focus?.extra_focus_picks) && <p className="support-text">자유 선택권 {focus!.extra_focus_picks}개를 추가합니다. 이 포커스를 해제하면 선택권을 다시 배정합니다. 먼저 고른 유효한 포커스는 유지하며, 조건을 잃은 연결 상위 레벨은 해제됩니다.</p>}
+        </div>}
+        {Boolean(focus?.extra_focus_picks) && <p className="support-text">자유 선택권 +{focus!.extra_focus_picks}. 해제 시 초과 선택도 해제될 수 있습니다.</p>}
+        {focus?.tradition_choice && <label>
+          <span>마법 전통</span>
+          <select aria-label={`${label} 마법 전통`} value={choice.traditionId ?? ''}
+            aria-invalid={!focus.tradition_choice.options.includes(choice.traditionId ?? '')}
+            onChange={(event) => onRuleChoice(instance.instanceId, 'traditionId', event.target.value)}>
+            <option value="">전통 선택</option>
+            {choice.traditionId && !focus.tradition_choice.options.includes(choice.traditionId) && <option value={choice.traditionId} disabled>유효하지 않은 전통 (다시 선택하세요)</option>}
+            {focus.tradition_choice.options.map((id) => <option key={id} value={id}>{nameFor(id)}</option>)}
+          </select>
+        </label>}
         {focus?.packages && <label>
           <span>{focus.packages.required ? '필수 선택 특성' : '선택 특성'}</span>
           <select aria-label={`${label} 특성 묶음`} value={choice.packageId ?? ''} aria-invalid={Boolean(focus.packages.required && !choice.packageId)}

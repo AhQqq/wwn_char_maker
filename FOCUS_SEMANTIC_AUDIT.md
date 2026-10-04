@@ -31,8 +31,8 @@ Korean sentences introduced as **conditional wording** assume the stated interpr
 | P1 D | `authority2`, `elves2`, `chattel1`, `functionary1` | Additional or missing skill/modifier effects alter the character sheet. |
 | P1 D/R | `armored_magic1`, `nullifier1`, `polymath1`, `lucky1` | Prose prerequisites are absent from requirements; Lucky's exact threshold and evaluation stage also need a ruling. |
 | P1 D/R | `focus_0421`, `chattel1`, `elves1`, `gnomes1` | Creation-time score changes or variant choices are not represented. Resolve interactions with the fixed array and other bonuses first. |
-| P1 D/R | `kitsune_beastfolk1`, `traditional_education1`, `spirit_familiar2`, `special_origin1` | Art grants, tradition choice, repeated upgrades, or nested focus selection are not captured by the current picker. |
-| P1 D | `die_hard1`, `all_directions_edge_style1`, `impervious_defense1`, `dwarves_21` | HP/AC or HD wording affects first-level derived statistics but is not included in the current calculation. |
+| P1 D/R | `kitsune_beastfolk1`, `spirit_familiar2`, `special_origin1` | Art grants, repeated upgrades, or nested focus selection are not captured by the current picker. Traditional Education's creation mechanics are now implemented; see entry 102 for remaining wording and Effort interaction questions. |
+| P1 D | `die_hard1`, `all_directions_edge_style1`, `dwarves_21` | HP/AC or HD wording affects first-level derived statistics but is not included in the current calculation. Impervious Defense's base AC is now encoded; see entry 082. |
 | P1 R | `ghoul1`, `nullifier1`, `specialist2`, `focus_0351`, `goblins_tinker1` | Contradictory feeding intervals, delayed save success, retained dice count, reversed distance wording, or “set” versus “subtract.” |
 | P1/P2 R | `pyre_of_heaven_style2`, `trapmaster1`, `snipers_eye1`, `snipers_eye2`, `poisoner1`, `poisoner2` | Damage formulas, exceptions, or attack/save interactions can substantially change results. |
 
@@ -152,7 +152,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep.
 - **Observation:** E/R: Level 1's 접전 skill should match 백병. “항상 돌아옵니다” needs a return time and treatment of a failed/blocked throw. Level 2's “10 + ... 레벨” has no distance unit and 접근전 is inconsistent with 근접전; unlimited unit interpretation directly changes reach. Clarify whether the Long non-stacking clause chooses the better reach or always replaces it.
 - **Revision or ruling:** Conditional wording: “이 창을 들고 있는 동안 근접 공격의 사거리는 (10 + 캐릭터 레벨)ft입니다.” Confirm ft before publication. Describe 30/60ft as normal/long range and whether +1 attack/damage stacks with a weapon's existing magic. Name the long-property reference by an approved term or local ID.
-- **Manual Review:** Done. Although long-property might need a revisit in the future.
+- **Manual Review:** Done. 
 
 ### 008 진노하는 산 유파 / Wrathful Mountain Style
 
@@ -434,7 +434,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 **Priority:** P1
 
 - **Name:** Keep as a setting creature name rather than silently equating it with every 도깨비 tradition.
-- **Observation:** D: the +4 encumbrance STR and unconditional -2 Mental-save penalty are in effect but absent from derived metadata. WIS -1 alone does not reproduce the extra save penalty. E/R: 접전 should be 백병; clarify that the +4 is not an actual score increase.
+- **Observation:** D: the +4 encumbrance STR remains absent from derived metadata. The unconditional -2 Mental-save penalty is now encoded separately from WIS -1 (2026-10-04 implementation, not test-verified). The current description uses 백병. Clarify that the +4 is not an actual score increase.
 - **Revision or ruling:** “하중 계산에만 근력 점수 +4를 적용합니다. 모든 정신 내성굴림 결과에 -2 페널티를 받습니다.” The latter corresponds to raising the displayed Mental target by 2, unlike Laborer's conditional mind-affecting penalty.
 
 ### 035 쥐 수인 / English name absent
@@ -556,7 +556,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 **Priority:** P2
 
 - **Name:** Keep.
-- **Observation:** E/R: the encoded modifier changes now agree. “절반의 휴식” can be read as halving every recovery period, not just sleep; define affected recovery systems. Its Mental-save penalty is conditional on mind-affecting effects, unlike several other origins' unconditional penalties.
+- **Observation:** E/R: the encoded modifier changes now agree. “절반의 휴식” can be read as halving every recovery period, not just sleep; define affected recovery systems. Its Mental-save penalty is conditional on mind-affecting effects, unlike several other origins' unconditional penalties. As of 2026-10-04 it has structured conditional save metadata and a separately labelled sheet source, not an ordinary-target adjustment; tests were not run.
 - **Revision or ruling:** “정신에 영향을 미치는 효과에 대항하는 정신 내성굴림 결과에 -2 페널티” is clearer. Enumerate whether halved rest changes spell, Effort, HP, or System Strain recovery. Do not shorten that condition to “정신 내성 -2” on the sheet.
 
 ### 047 죄인 포병종 / Penal 抱病種
@@ -606,7 +606,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 **Priority:** P1
 
 - **Name:** Keep with hanja; distinguish the proper origin from Laborer rather than treating both as 노동자.
-- **Observation:** D: Exert and four modifier adjustments are encoded, but the additional unconditional -2 Mental-save penalty is not. INT/CHA penalties alone are not that penalty. R/E: “잔혹함에 더 유능” is unclear characterization, not an executable rule.
+- **Observation:** D: Exert and four modifier adjustments are encoded. The additional unconditional -2 Mental-save penalty was added separately on 2026-10-04; INT/CHA penalties alone are not that penalty. Tests were not run. R/E: “잔혹함에 더 유능” is unclear characterization, not an executable rule.
 - **Revision or ruling:** “모든 정신 내성굴림 결과에 -2 페널티를 받습니다.” On the current target-number sheet that requires an additional +2 to the target after modifiers. Keep this separate from the origin's CHA penalty and from Laborer's conditional penalty.
 
 ### 052 반인종 / 半人種; Halfmen
@@ -616,7 +616,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 **Priority:** P1
 
 - **Name:** Keep with the hanja/English alias if deliberate; 반인종 can otherwise be parsed as an unrelated anti-race expression. 반인 is a possible shorter display name, not a mandated setting change.
-- **Observation:** D: the unconditional -2 Mental-save penalty is absent; Survive and CON +1 are encoded. R: “어떤 식물도 소화” does not clearly grant immunity to poison or nutritional sufficiency, and “극한의 추위와 더위” needs boundaries distinguishing weather from damage.
+- **Observation:** D: Survive and CON +1 are encoded. On 2026-10-04 the translator confirmed that Mental -2 is unconditional for this character; it is now encoded separately, without a proximity switch. Tests were not run. R: “어떤 식물도 소화” does not clearly grant immunity to poison or nutritional sufficiency, and “극한의 추위와 더위” needs boundaries distinguishing weather from damage.
 - **Revision or ruling:** List whether the trait concerns environmental exposure only, excluding fire/frost attacks unless explicitly intended. Clarify that digestibility does not necessarily mean toxin immunity. Render the independent Mental penalty with the correct die/target sign.
 
 ### 053 예속종 / 隷屬種
@@ -626,8 +626,8 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 **Priority:** P1
 
 - **Name:** Keep; trim trailing whitespace and place hanja in a dedicated alias field if the schema later supports it.
-- **Observation:** D: Convince, Perform and CHA +1 are encoded, but the stated -2 to all Mental saves is not. Although the explanation mentions susceptibility to mental influence, the operative sentence says all Mental saves, unlike Laborer.
-- **Revision or ruling:** Choose whether the restriction really applies to all Mental saves or only mental-influence effects; do not narrow it merely from flavor. If the existing operative sentence wins: “모든 정신 내성굴림 결과에 -2 페널티를 받습니다.”
+- **Observation:** D: Convince, Perform and CHA +1 are encoded. The stated -2 to all Mental saves was encoded separately on 2026-10-04; tests were not run. Although the explanation mentions susceptibility to mental influence, the operative sentence says all Mental saves, unlike Laborer.
+- **Revision or ruling:** The implementation follows the existing operative sentence, without narrowing it from flavor: “모든 정신 내성굴림 결과에 -2 페널티를 받습니다.” Change the condition explicitly if a narrower rule is intended.
 
 ## Other World Origins
 
@@ -740,6 +740,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 **Priority:** P1
 
 - **Name:** Keep with a setting/category qualifier distinct from dwarves1.
+- **Implementation follow-up (2026-10-04):** The +2 to saves against hostile magical effects now has structured condition/source metadata. It is excluded from ordinary target totals; overlapping conditional bonuses are not automatically stacked. Tests were not run. The HP/HD issue below remains deferred.
 - **Observation:** D/R: Level 1 says “각 레벨마다 HD에 +1”; this can mean additional hit dice, hit-die result bonus, or HP per character level. Current HP does not include any such effect. Spatial sense “20ft까지 단단한 물체” needs to distinguish sensing solid objects from seeing through solid barriers. Level 2's paid 100ft option may or may not share the daily use.
 - **Revision or ruling:** Resolve and write either “레벨당 최대 HP +1” or the intended dice expression, not bare HD +1. For Level 2 say whether the user negates only personal effects or cancels the effect for everyone; define the once-per-day limit, Strain cost, targeting, and persistence separately. 기관계 부하 should match the approved resource term.
 
@@ -874,6 +875,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep.
 - **Observation:** R: thrown weapons are explicitly included but Level 1 adds Shoot rather than whichever attack skill was used; preserve or revise deliberately. Level 2's “사격 기술 판정에서 2” could mean unmodified dice sum, final total, or attack-roll natural 2. Action cost and the immobile/nonliving target conditions must remain distinct from attacking living enemies.
 - **Revision or ruling:** Conditional wording: “사격 기술 판정의 [주사위 눈의 합/최종 결과]가 2인 경우와 물리적으로 명중할 수 없는 경우를 제외하고 ...”. State which check is actually rolled and whether roll-twice/best-dice effects change the failure criterion. Confirm that non-stacking with Armsmaster concerns overlapping benefits rather than prohibiting ownership of both foci.
+- **Manual Review:** Done.
 
 ### 077 협상가 / Dealmaker
 
@@ -884,6 +886,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep; 거래의 달인 is an optional distinction from Diplomatic Grace's diplomacy.
 - **Observation:** E/R: “반 시간의 시간” can simply be 30분. Finding a seller is not obtaining the goods; preserve rarity and adventure requirements. Level 2's “바로 죽이려고 하지 않는” means immediate intent, not general hostility, and the text does not clearly say whether fair payment guarantees agreement or only a hearing.
 - **Revision or ruling:** State the negotiated outcome, request bounds, and GM role. Keep one use per session rather than per NPC unless explicitly intended. Distinguish this commercial request from Connected/Cultured/Diplomatic Grace to prevent combining their prose into unlimited compulsion.
+- **Manual Review:** Done.
 
 ### 078 능력치 개발 / Developed Attribute
 
@@ -894,6 +897,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep with a subtitle “수정치 향상” if useful; the existing title alone can imply a score increase.
 - **Observation:** E: repeatability and unchanged score are explicit, and encoded caps agree. The approved rule now needs to say the same attribute may be chosen on multiple instances, caps do not add, and mage archetype exclusion includes partial and nonspellcasting mage classes. Penal exclusion is encoded but absent from this entry's prose.
 - **Revision or ruling:** “반복 선택할 때 같은 능력치를 다시 선택할 수 있습니다. 각 선택은 수정치 +1을 주지만, 상한 +3 허용은 중첩되지 않습니다. 실제 점수는 바뀌지 않습니다.” Add the already-approved class/identity exclusion precisely, not a new spellcaster-only restriction.
+- **Manual Review:** Done.
 
 ### 079 외교의 귀재 / Diplomatic Grace
 
@@ -904,6 +908,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep.
 - **Observation:** R: Level 1's reroll of each die showing 1 lacks a one-reroll versus repeat-until-not-1 limit, especially with extra dice. Level 2's implicit bargain needs to identify assent, save timing, forbidden demands, duration, and whether multiple targets are possible.
 - **Revision or ruling:** Use “1이 나온 각 주사위를 [한 번만/1이 아닐 때까지] 다시 굴립니다” after approval. For Level 2 say whether a successful Mental save rejects the bargain and who selects its expiration; “시간적 제한” alone permits arbitrarily long obligations.
+- **Manual Review:** Done.
 
 ### 080 신의 / Gifted Chirurgeon
 
@@ -914,6 +919,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Suggested 신의(神醫) or 천부적 의술. Bare 신의 may mean faithfulness or 'of a god', while Chirurgeon is a medical practitioner rather than necessarily divine magic.
 - **Observation:** R: Level 1's 3d6-drop-lowest can overlap Specialist(Heal); define replacement rather than accumulating extra dice. “전투에서 응급처치” may intentionally exclude treatment outside combat. Level 2's Strain cap check could forbid healing that would reach the cap or only healing while already at it.
 - **Revision or ruling:** Explicitly state whether the recipient at max-1 may gain the final point and receive healing. Standardize 기관 부하. Define whether self counts as an adjacent ally and whether magical healing removes an existing 쇠약 state or only avoids gaining one from this recovery.
+- **Manual Review:** Done.
 
 ### 081 두목 / Henchkeeper
 
@@ -924,16 +930,18 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep for tone; 부하 거느리기 is a functional alternative but less like a character trait.
 - **Observation:** R: “3레벨마다 부하 한 명을 추가 ... 올림” could mean ceil(level/3) total or 1 + ceil(level/3) total. At level 1 that yields one or two followers. Level 2 lacks clarity on whether the veteran upgrade applies to all existing/new focus followers and whether exceptional NPCs count toward the same limit.
 - **Revision or ruling:** Publish a formula and examples for character levels 1, 3 and 4. Define capacity separately from the 24-hour recruitment time. Preserve the distinction between loyal focus followers and additional paid hirelings; reference exact local stat blocks or provide a concise block.
+- **Manual Review:** Done.
 
-### 082 무적의 방어 / Impervious Defense
+### 082 불괴 / Impervious Defense
 
 **IDs:** `impervious_defense1`, `impervious_defense2`
 
 **Priority:** P1
 
 - **Name:** Consider 철벽 방어 or 난공불락의 방어; 무적 may imply continuous immunity, whereas the effects are high AC and one daily negation.
-- **Observation:** D: Level 1's base AC formula is absent from current derived AC. R: publish parentheses for 15 + ceil(character level / 2), and define armor comparison, DEX and shield additions rather than stacking armor on it. Level 2 needs its decision window and the extent of one attack versus one damage source.
-- **Revision or ruling:** Conditional formula: “기본 AC는 15 + ceil(캐릭터 레벨 / 2)입니다. 여기에 민첩 수정치와 방패 보너스만 더합니다.” At character level 1 that gives base AC 16. Confirm how choosing to wear better armor works and whether area weapon attacks count as one negatable attack.
+- **Implementation follow-up:** The catalogue now uses 불괴. Level 1's `15 + ceil(character level / 2)` base AC is encoded (16 at level 1). The translator confirmed using the higher of focus and worn-armor bases before the usual shield rule and final DEX, with worn-armor skill penalties retained. The sheet exposes the actual base source and recalculates on removal. Test source was added but not executed.
+- **Remaining wording review:** Publish the parenthesized formula and non-stacking comparison explicitly in the prose. Level 2 remains unavailable in this creator; any future daily damage-negation automation still needs its decision window, the extent of one attack versus one damage source, and whether area weapon attacks count as one negatable attack.
+- **Manual Review:** Done.
 
 ### 083 첩자 / Imposter
 
@@ -944,6 +952,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Suggested 사칭의 달인 or 위장 전문가; 첩자 implies espionage employment not required by the actual disguise/identity mechanics.
 - **Observation:** R/E: desc's 은신 should be 잠행 when naming the skill. Level 1's “완벽한 증거만 ... 관련지을” needs to identify which true identity is concealed and whether ordinary disguise detection is still possible. Level 2 changes to three outfits, not necessarily three different bodies, and its identity count/reset needs clarity.
 - **Revision or ruling:** Distinguish 의상, 외모, 가짜 신분, and 실제 신원. State whether the three preset outfits can be replaced and whether they are illusory or physical. Do not silently expand clothing change into unrestricted bodily shapeshifting.
+- **Manual Review:** Done.
 
 ### 084 행운아 / Lucky
 
@@ -954,6 +963,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep.
 - **Observation:** D/R: the prerequisite “최소한 하나의 능력 수정치가 -1” is not encoded. Does it require exactly -1 or any negative modifier including -2/-3? Does it inspect score-derived modifiers or final focus-adjusted modifiers, and must it remain true after later selections? Level 1 explicitly retains the better reroll, unlike entries that do not say so.
 - **Revision or ruling:** Choose either “수정치가 정확히 -1인 능력치가 하나 이상” or “수정치가 -1 이하인 능력치가 하나 이상”, then specify evaluation stage. For Level 2 preserve both the 2-6 benefit and the 1 adverse result; state whether that d6 itself is eligible for luck rerolls.
+- **Manual Review:** Done.
 
 ### 085 무화자 / Nullifier
 
@@ -961,9 +971,10 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 
 **Priority:** P1
 
-- **Name:** Keep if established, but align the reference 무화사 in Mageslayer's art; 마법 상쇄자 is an optional clearer alternative.
-- **Observation:** D: mage/partial-mage exclusion is only in desc. R: “첫 번째로 실패했을 때, 다음 날 그 내성굴림을 성공한 것으로” literally delays success until the next day; it may instead intend a daily first-failure conversion. Those outcomes are not equivalent. Level 2 might negate one chosen magic effect or all unwanted magic for a scene.
-- **Revision or ruling:** Do not silently rewrite 다음 날. Ask whether the intended rule is immediate success once per day, next-day recovery from the effect, or something else. If approved: “매일 처음 실패한 대마법 내성굴림을 즉시 성공으로 바꿉니다.” Identify the user's own immunity versus any ally aura; the +2 applies only against magic.
+- **Name:** Keep the established 무화자. The remaining 무화사 reference in Mageslayer's Antimage art was aligned on 2026-10-04.
+- **Observation:** The translator's current data includes `not_class: mage` and says each day's first failed magic save counts as a success, resolving the original next-day ambiguity. On 2026-10-04 the magic-only +2 aura gained structured condition/source metadata (self and allies within 20 feet); the daily conversion is a play note, not a constant bonus or tracked use. Tests were not run. Level 2's immunity scope remains reference wording, not implemented at creation.
+- **Revision or ruling:** Preserve the corrected local wording and mage exclusion. The +2 applies only against magic and is not part of ordinary targets. Antimage now grants level 1 for free with its art source, refunding a paid duplicate and applying the effect once. The translator confirmed that creation-time level-2 upgrades and the already-level-2 alternate-focus benefit remain unavailable. Regression source was added but not run; no combat-time aura or daily-use simulation is included.
+- **Manual Review:** Done.
 
 ### 086 독살자 / Poisoner
 
@@ -974,6 +985,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep, or 독의 달인 if emphasizing nonlethal preparations as well. The title should not restrict the expressly allowed nonlethal option.
 - **Observation:** R: detection difficulty uses “경계를 하지 않았거나 ... 귀족이 아니라면”, whose OR makes even a vigilant commoner face the higher difficulty; confirm the unusual nobility condition. A dose poisoning 5-6 people lacks a fixed target count. Level 1 attack-or-Shock poison needs a trigger and save outcome. Level 2 may apply the Heal penalty twice through its general clause and repeated explicit clause.
 - **Revision or ruling:** Write a detection-condition truth table rather than replacing 귀족 with another guess. State dose size, delivery method, whether damage once per hit/poisoning or repeatedly on Shock, and whether Level 2's successful-save damage replaces or adds to ordinary poison. Explicitly say a repeated Heal penalty is applied once if that is intended.
+- **Manual Review:** Done.
 
 ### 087 박식가 / Polymath
 
@@ -984,6 +996,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep; 만능가 is an optional practical-skills emphasis but may overpromise combat ability.
 - **Observation:** D: Expert/partial-Expert restriction is absent from requirements. R: effective ranks apply only to checks, not learned ranks, advancement, damage, or prerequisites. “비전투” can include Magic/Pray/Alchemy under current skill tags; no Magic exclusion is stated here. Using rank 0 must not lower a genuinely trained rank.
 - **Revision or ruling:** “비전투 기술 판정에 한해, 실제 기술 레벨과 [0/1] 중 높은 값을 사용합니다. 실제 기술 레벨이나 기술 습득 횟수는 변하지 않습니다” if that reflects intent. Confirm the allowed skill set explicitly and keep Level 2 as a replacement effective rank, not an additional +1.
+- **Manual Review:** Done.
 
 ### 088 기수 / Rider
 
@@ -994,6 +1007,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep; 탑승의 달인 is broader if non-equine mounts are common.
 - **Observation:** R: Level 1 needs to define whether benefits apply only while mounted and whether “탈것” includes nonanimal vehicles. The AC transfer is replacement by the higher value, not addition. Level 2's telepathy “한 시간을 소비” can mean setup time, duration, or both, and the two once-per-scene benefits may be separate.
 - **Revision or ruling:** “이 정신적 연결을 형성하는 데 1시간이 필요합니다” versus “연결은 1시간 동안 지속됩니다” must be chosen. Identify one linked creature at a time and range-breaking behavior. State timing/action for turning a successful hit into a miss and preserve double speed for travel, not automatically combat.
+- **Manual Review:** Done.
 
 ### 089 충격 돌격대 / Shocking Assault
 
@@ -1004,6 +1018,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Suggested 충격 맹공. 돌격대 describes a unit and implies movement/charging, neither of which is required by the actual effect.
 - **Observation:** R/E: Level 1 explicitly preserves Shock immunity, unlike shorter AC10 clauses elsewhere; keep those consistent. “충분한 위력” should identify a Shock-capable weapon rather than a subjective damage threshold. Level 2 adds Shock damage, not attack or ordinary hit damage automatically.
 - **Revision or ruling:** “원래 충격 피해를 줄 수 있는 근접 무기 또는 비무장 공격의 충격 피해에 +2를 더합니다.” Confirm whether the global minimum-hit-damage rule incorporates this indirectly; do not encode it as a universal attack bonus or bypass immunity.
+- **Manual Review:** Done.
 
 ### 090 저격수의 눈 / Sniper’s Eye
 
@@ -1014,6 +1029,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep.
 - **Observation:** D/R within prose: desc says the benefits apply only to execution attacks, but Level 1 expressly also covers stationary nonliving targets. Decide which scope wins. Level 1's 3d6 needs to name the skill check rather than damage or attack d20. Level 2's automatic hit still leaves a Physical save, and “두 배의 피해” lacks a damage baseline.
 - **Revision or ruling:** Amend the shared restriction to include the stated Level 1 exception if intended. For Level 2 identify the normal damage components to double and whether successful-save damage replaces the ordinary execution fallback. Preserve the explicit -4 save penalty without interpreting it as a lower target.
+- **Manual Review:** Done.
 
 ### 091 특별한 기원 / Special Origin
 
@@ -1024,6 +1040,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep, but make it visibly a selection instruction if that is its intended role rather than a standalone mechanical focus.
 - **Observation:** D/R: this normal-type, empty-effect focus says to choose it and then choose an origin. The picker currently charges a pick for each selected entry, with no nested origin choice or validation. That creates a possible two-pick tax or a paid entry granting nothing. It does not itself count toward the one-origin-family rule.
 - **Revision or ruling:** Decide whether this is a nonselectable explanatory heading, a wrapper spending one pick for a chosen origin, or a genuine additional cost. Suggested wrapper wording only if approved: “이 선택권 1회를 사용해 기원 포커스 하나를 선택합니다. 설명용 항목과 기원을 별도로 지불하지 않습니다.” Keep purely cosmetic ancestry free as the current desc states.
+- **Manual Review:** Done.
 
 ### 092 특성화 인재 / Specialist
 
@@ -1034,6 +1051,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Suggested 기술의 달인 or 특정 기술의 달인; avoid plain 전문가 because it is already the Expert class name. 특성화 인재 has an institutional/educational tone rather than a rules category.
 - **Observation:** R: Level 2 literally rolls 4d6 and discards one die, leaving three dice; Level 1 leaves two. If the intended improvement is choosing the best two dice, that would require discarding two, but no such correction is justified from local text alone. E: approved distinct skills and owned upgrades are not yet explained in prose.
 - **Revision or ruling:** Specify either “4d6을 굴려 가장 낮은 1개를 버리고 나머지 3개를 합산” or “가장 낮은 2개를 버리고 나머지 2개를 합산” after your ruling. Add that each Level 1 instance chooses a different legal skill, Level 2 upgrades that instance, and no second skill allotment is granted by the upgrade.
+- **Manual Review:** Done.
 
 ### 093 영체 권속 / Spirit Familiar
 
@@ -1042,8 +1060,10 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 **Priority:** P1
 
 - **Name:** Keep if 권속 is the chosen familiar term; use that term consistently with 패밀리어/종복 in spells. “구조물” for a construct companion may merit 피조물, subject to your terminology.
-- **Observation:** D: Level 2 explicitly allows repeated purchases and two benefits per purchase, but lacks repeatable metadata and any saved choices; the engine also allows a particular upgrade only once per parent. R: duplicate benefits, replacing versus adding HP, the owner of committed Effort, and its recovery timing need rulings. The named summoning spell does not exactly match a catalogue title.
-- **Revision or ruling:** Calculation of the Evoked Servitor (calculation_of_the_evoked_servitor / 불러진 종복의 계산) is a plausible local reference by content, not a confirmed identity. Confirm it. Specify two distinct benefits, whether later purchases may repeat them, and whether HP becomes 3 x character level or increases by that amount. “중요 행동” should use the approved Main-action label.
+- **Observation:** D: Level 2 explicitly allows repeated purchases and two benefits per purchase. Repeatability and six benefit options are now encoded as catalogue-only metadata; saved choices and effect calculation remain unimplemented, and the engine still limits a particular upgrade to once per parent. R: the original audit also flagged replacing versus adding HP, the owner of committed Effort, and its recovery timing. The named summoning spell does not exactly match a catalogue title; this data-preparation pass does not change those descriptions.
+- **Revision or ruling:** Confirmed for future purchases: choose exactly two distinct benefits each time, with no repeated benefit anywhere in the character's acquisition history. Calculation of the Evoked Servitor (calculation_of_the_evoked_servitor / 불러진 종복의 계산) remains the original audit's plausible local reference by content, not a confirmed identity. The original wording proposals concerning whether HP becomes 3 x character level or increases by that amount, and using the approved Main-action label instead of “중요 행동”, are not newly adjudicated here.
+- **Implementation follow-up (2026-10-04):** Per translator direction, keep all level-2 selections unavailable at creation. `repeatable` and `benefit_choices` now record the six stable IDs, two choices, global uniqueness and familiar-only target; the background benefit includes a future background subchoice. No higher-level picker, stored benefit choices or companion effects are implemented. Future work must adapt linked-upgrade accounting/removal and persistence without applying familiar bonuses to the character. Regression source was added but tests/builds/type checks/browser checks were not run.
+- **Manual Review:** Done.
 
 ### 094 덫사냥꾼 / Trapmaster
 
@@ -1054,6 +1074,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Suggested 함정의 달인; 덫사냥꾼 suggests hunting while the effects also cover alarms, containers, and magical security.
 - **Observation:** R: “1d6+캐릭터 레벨의 두 배” can mean 1d6 + 2 x level or 2 x (1d6 + level). Level 1 also needs save type, round duration, and trigger boundary. Level 2 commits Effort without amount/recovery duration; it cites 마법 제거 rather than a local spell title and leaves the preliminary check's difficulty/effect unstated.
 - **Revision or ruling:** Publish the exact damage expression after a ruling. Confirm whether Extirpate Arcana (extirpate_arcana / 신비를 근절하라) is the intended local spell; its description does not permanently remove fixed effects, so explain any trap-specific exception. Specify what a noncaster uses for the spell's opposed check and distinguish a stored Effort commitment from once-per-scene frequency.
+- **Manual Review:** Done.
 
 ### 095 공수가 / Unarmed Combatant
 
@@ -1064,6 +1085,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Suggested 맨손 격투가 or 비무장 전투가. 공수가 can be read as a specific martial tradition or an unrelated compound; the effect applies broadly to unarmed combat.
 - **Observation:** R/E: distinguish character level from Punch skill rank in the damage table. The ordinary Punch-rank damage addition and Shock already equal to that rank must not double-count. Level 2 explicitly allows additional Shock with its fixed 1d6 miss damage, but “또한 추가될 수” needs to specify remaining AC/immunity checks.
 - **Revision or ruling:** Give separate formulas for hit damage and Shock. For Level 2: “빗나간 격투 공격은 수정치 없는 1d6 피해를 가합니다. 별도로 충격 피해의 통상 조건을 만족하면 충격 피해도 가합니다” only if additive resolution is intended. Clarify natural claws and weapon-like unarmed attacks.
+- **Manual Review:** Done.
 
 ### 096 특별한 재능 / Unique Gift
 
@@ -1074,6 +1096,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep.
 - **Observation:** R: an empty effect is intentional only if a negotiated ability is recorded somewhere; current selection alone can appear complete without an agreed rule. “협의해” needs grammatical correction. Mid-session rebalancing without mutual agreement can look like unilateral revocation.
 - **Revision or ruling:** “플레이어와 GM이 협의하여 효과, 사용 행동, 횟수, 비용, 지속시간, 제한을 정하고 기록합니다.” Identify whether completion requires a GM note/approval or is intentionally manual. Do not automatically invent a generic bonus for this focus.
+- **Manual Review:** Done.
 
 ### 097 수호자 / Valiant Defender
 
@@ -1084,6 +1107,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep; 용맹한 수호자 is an optional closer title rendering without changing function.
 - **Observation:** R: Level 1's extra protection count should distinguish attempted intercepts from successful ones. For spell/magical protection, the user's skill/attribute and an enemy without Magic rank are undefined. Level 2's first automatic protection may or may not bypass the magical opposed check. The +2 AC needs owner and duration.
 - **Revision or ruling:** Specify whose AC rises and for which attack/interval. Define whether the first protection is per round even outside the user's turn and whether an automatic success spends the ordinary protection allowance. Retain the explicit bull-sized limit rather than treating it as unrestricted giant interception.
+- **Manual Review:** Done.
 
 ### 098 좋은 인상 / Well Met
 
@@ -1094,6 +1118,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep; 좋은 첫인상 makes the once-per-creature restriction clearer, if that scope applies to the whole focus.
 - **Observation:** R: desc says once per creature, while Level 2 says once per session; clarify whether both limits constrain Level 2. Define individual-versus-group reaction rolls, whether hostility becomes friendship or temporary openness, and whether multiple reaction bonuses stack.
 - **Revision or ruling:** “각 크리쳐와 처음 만날 때만” only if first meeting is the intended trigger rather than any one chosen encounter. State that the speech opportunity is not a guarantee of obedience. Keep the GM's reason for friendliness distinct from the player's mechanical use.
+- **Manual Review:** Done.
 
 ### 099 난전 돌격대 / Whirlwind Assault
 
@@ -1104,6 +1129,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Suggested 회오리 맹공 or 선풍 공격; 돌격대 implies a unit/charge, and 난전 loses the circular-strike image.
 - **Observation:** R: Level 1's all-enemy Shock needs ordinary weapon/AC/immunity conditions and whether each target counts as hit for other effects. Level 2 triggers on killing, but the follow-up weapon, attack type, range, and timing are not named; the once-per-round limit should prevent an unbounded chain.
 - **Revision or ruling:** “라운드당 한 번 ... 사거리 내 다른 대상에게 추가 공격 1회” preserves the count. Decide whether nonlethal incapacitation qualifies as killing and whether the follow-up can be ranged after a melee kill. Do not introduce a movement requirement solely from the Korean title.
+- **Manual Review:** Done.
 
 ### 100 외세계 영향 / Xenoblooded
 
@@ -1114,6 +1140,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Suggested 이계의 혈통 or 외세계의 피; current 외세계 영향 omits the bloodline emphasis but may be deliberately broader.
 - **Observation:** R: the aquatic “120도의 시야” explicitly names an angle, not a distance; confirm angle versus range, and supply whatever other limit is needed. Radiation absorption does not explicitly say immunity to all radiation damage. The focus is type normal despite ancestry-like flavor, so it currently can coexist with an origin; do not reclassify it without your decision.
 - **Revision or ruling:** Keep one atomic package; gravity chooses STR +1/DEX -1 or DEX +1/STR -1 together. If 120 degrees is intended, specify viewing distance separately; if it is distance, approve a unit before editing. State whether aquatic breathing replaces or supplements breathing air. Do not silently add ordinary-origin restrictions based solely on the proposed name.
+- **Manual Review:** Done.
 
 ## Additional Foci
 
@@ -1127,6 +1154,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Observation:** E/R: Level 1 says Alchemy-0, while the approved builder treats this as one allotment that can instead produce level 1 or overflow points. Level 2's one week for 25 silver per level of reagents lacks a production cap and whether output can be accumulated, sold, or applied to all costs. The earlier improvised-lab permission may not cover advanced work.
 - **Revision or ruling:** Reference the approved skill-allotment rule rather than resetting existing skill to 0. Distinguish basic/advanced recipe access from learned recipe lists. “캐릭터 레벨 x 25은화 상당의 재료 ... 자신의 작업에만 사용” preserves the stated value and personal-use limit without inventing resale rights or an automatic weekly stipend.
 
+
 ### 102 전통적 교육 / Traditional Education
 
 **IDs:** `traditional_education1`
@@ -1134,8 +1162,8 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 **Priority:** P1
 
 - **Name:** Suggested 마법 전통 수련 or 비전 전통 교육. 전통적 교육 sounds like ordinary conservative schooling rather than training in one magical tradition.
-- **Observation:** D: Invoker-only selection is encoded, but tradition selection, school access, starting arts, and its Effort maximum are not. The current spell picker still grants an Invoker only High Magic and the arts evaluator only class-based plans. R: the wording can refer to the Invoker's full/partial status or a borrowed tradition's status, and does not settle duplicate arts or whether learned spells increase in count.
-- **Revision or ruling:** Record the chosen tradition explicitly. Define which full/partial starting-art rule applies, how fixed arts and choices are gained, whether duplicate arts are replaced, and whether the focus expands only allowed schools or also spell count. “최대 분발 = max(1, 마법 기술 레벨)” needs to specify a separate pool versus overriding/adding to existing pools. Preserve the one-purchase limit and no later arts from this tradition.
+- **Implementation follow-up (2026-10-04):** Tradition selection, Invoker-only school access, starting arts, and the Effort maximum are now encoded. The translator confirmed the Invoker's full/partial status determines the tradition's starting-art rule, including fixed arts; duplicates are learned once with no replacement. Starting spells remain two for partial Invoker and four for full Invoker, all first level. Maximum Effort uses Magic skill level with the existing minimum of 1; no attribute bonus is added. Test source was added but not run. Cross-class Effort interaction is not modeled; the displayed value retains its focus source.
+- **Remaining wording review:** Rewrite the focus prose to explicitly use the Invoker's full/partial status, include fixed arts without duplicate replacements, and expand allowed schools without increasing starting spell count, following the confirmed implementation above. “최대 분발 = max(1, 마법 기술 레벨)” still needs to specify its interaction with another class's Effort before shared pools or expenditure are implemented. Preserve the one-purchase limit and no later arts from this tradition. The Korean-name suggestions remain unapproved.
 
 ## Coverage and Validation
 

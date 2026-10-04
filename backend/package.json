@@ -6,7 +6,7 @@
   "scripts": {
       "dev": "tsx watch src/index.ts",
       "start": "node dist/index.js",
-      "test": "node --import tsx --test src/background.test.ts src/attributes.test.ts src/focusBonuses.test.ts src/focusFidelity.test.ts src/modifierCaps.test.ts src/focusCreation.test.ts src/focusSelection.test.ts src/skillAllocation.test.ts src/spellSelection.test.ts src/artSelection.test.ts src/classSelection.test.ts src/classAbilities.test.ts src/focusAbilities.test.ts src/abilityEffects.test.ts src/startingEquipment.test.ts src/equipment.test.ts"
+      "test": "node --import tsx --test src/background.test.ts src/backgroundAttributes.test.ts src/attributes.test.ts src/focusBonuses.test.ts src/focusFidelity.test.ts src/modifierCaps.test.ts src/focusCreation.test.ts src/focusSelection.test.ts src/skillAllocation.test.ts src/spellSelection.test.ts src/artSelection.test.ts src/artFocusGrants.test.ts src/traditionalEducation.test.ts src/imperviousDefense.test.ts src/savingThrows.test.ts src/classSelection.test.ts src/classAbilities.test.ts src/focusAbilities.test.ts src/abilityEffects.test.ts src/startingEquipment.test.ts src/equipment.test.ts"
   },
   "keywords": [],
   "author": "",

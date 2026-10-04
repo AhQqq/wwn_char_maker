@@ -1,10 +1,14 @@
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { evaluateBackground } from "./background.js";
+import { createDataReader } from './dataReader.js';
+import { applyBackgroundAttributeGrants, evaluateBackground } from "./background.js";
 import type { BackgroundData, BackgroundDraft } from "./background.js";
 import { evaluateAttributes } from "./attributes.js";
 import type { AttributeDraft } from "./attributes.js";
 import { evaluateFocusCreation } from '../../shared/focusCreation.js';
+import { resolveArtFocusGrants } from '../../shared/artFocusGrants.js';
+import { calculateSavingThrows } from '../../shared/savingThrows.js';
+import { evaluateFocusEffort } from '../../shared/focusTraditions.js';
 import type { FocusAllowance } from '../../shared/focusAllowances.js';
 import type { FocusData } from "./focusBonuses.js";
 import { evaluateCreationSkills } from '../../shared/skillAllocation.js';
@@ -79,56 +83,51 @@ function resolveDataDir() {
   throw new Error("Could not locate frontend/data directory.");
 }
 
-function readData<T>(dataDir: string, fileName: string): T {
-  return JSON.parse(readFileSync(join(dataDir, fileName), "utf8")) as T;
+const DATA_DIR = resolveDataDir();
+const readData = createDataReader();
+
+function readCharacterData() {
+  const SKILLS = readData<SkillData[]>(DATA_DIR, "skills.json");
+  const ATTRIBUTES = readData<Array<{ id: string; tags: string[] }>>(DATA_DIR, "attributes.json");
+  const CLASSES = readData<ClassData[]>(DATA_DIR, "classes.json");
+  const COMBINATIONS = readData<ClassCombinations>(DATA_DIR, 'combinations.json');
+  const ABILITIES = readData<AbilityDefinition[]>(DATA_DIR, 'abilities.json');
+  const CLASS_ABILITY_RULES = readData<ClassAbilityRules>(DATA_DIR, 'fullclass_abilities.json');
+  const BACKGROUNDS = readData<BackgroundData[]>(DATA_DIR, "backgrounds.json");
+  const FOCI = readData<FocusData[]>(DATA_DIR, "foci.json");
+  const SPELLS = readData<SpellOption[]>(DATA_DIR, "spells.json");
+  const EQUIPMENT = readData<EquipmentDefinition[]>(DATA_DIR, 'equipment.json');
+  const EQUIPMENT_PROPERTIES = readData<EquipmentProperty[]>(DATA_DIR, 'equipment_properties.json');
+  const STARTING_EQUIPMENT = readData<EquipmentPackage[]>(DATA_DIR, 'starting_equipment.json');
+  const STARTING_ARTS = readData<StartingArts>(DATA_DIR, 'starting_arts.json');
+  const ART_DIR = join(DATA_DIR, 'arts');
+  const ARTS = existsSync(ART_DIR) ? readdirSync(ART_DIR).filter((file) => file.endsWith('_arts.json'))
+    .flatMap((file) => readData<ArtOption[]>(ART_DIR, file)) : [];
+  const PROGRESSION_TABLES = readData<ProgressionTable[]>(DATA_DIR, "progression_tables.json");
+
+  return { SKILLS, ATTRIBUTES, CLASSES, COMBINATIONS, ABILITIES, CLASS_ABILITY_RULES, BACKGROUNDS,
+    FOCI, SPELLS, EQUIPMENT, EQUIPMENT_PROPERTIES, STARTING_EQUIPMENT, STARTING_ARTS, ARTS, PROGRESSION_TABLES };
 }
 
-const DATA_DIR = resolveDataDir();
-const SKILLS = readData<SkillData[]>(DATA_DIR, "skills.json");
-const ATTRIBUTES = readData<Array<{ id: string; tags: string[] }>>(DATA_DIR, "attributes.json");
-const CLASSES = readData<ClassData[]>(DATA_DIR, "classes.json");
-const COMBINATIONS = readData<ClassCombinations>(DATA_DIR, 'combinations.json');
-const ABILITIES = readData<AbilityDefinition[]>(DATA_DIR, 'abilities.json');
-const CLASS_ABILITY_RULES = readData<ClassAbilityRules>(DATA_DIR, 'fullclass_abilities.json');
-const BACKGROUNDS = readData<BackgroundData[]>(DATA_DIR, "backgrounds.json");
-const FOCI = readData<FocusData[]>(DATA_DIR, "foci.json");
-const SPELLS = readData<SpellOption[]>(DATA_DIR, "spells.json");
-const EQUIPMENT = readData<EquipmentDefinition[]>(DATA_DIR, 'equipment.json');
-const EQUIPMENT_PROPERTIES = readData<EquipmentProperty[]>(DATA_DIR, 'equipment_properties.json');
-const STARTING_EQUIPMENT = readData<EquipmentPackage[]>(DATA_DIR, 'starting_equipment.json');
-const STARTING_ARTS = readData<StartingArts>(DATA_DIR, 'starting_arts.json');
-const ART_DIR = join(DATA_DIR, 'arts');
-const ARTS = existsSync(ART_DIR) ? readdirSync(ART_DIR).filter((file) => file.endsWith('_arts.json'))
-  .flatMap((file) => readData<ArtOption[]>(ART_DIR, file)) : [];
-const PROGRESSION_TABLES = readData<ProgressionTable[]>(
-  DATA_DIR,
-  "progression_tables.json",
-);
+export function getDataCounts() {
+  const { SKILLS, CLASSES, ABILITIES, BACKGROUNDS, FOCI, SPELLS, EQUIPMENT, EQUIPMENT_PROPERTIES,
+    STARTING_EQUIPMENT, ARTS, PROGRESSION_TABLES } = readCharacterData();
+  return {
+    backgrounds: BACKGROUNDS.length, classes: CLASSES.length, foci: FOCI.length,
+    skills: SKILLS.length, spells: SPELLS.length, progressions: PROGRESSION_TABLES.length,
+    arts: ARTS.length, abilities: ABILITIES.length,
+    equipment: EQUIPMENT.length, equipmentProperties: EQUIPMENT_PROPERTIES.length, startingEquipment: STARTING_EQUIPMENT.length,
+  };
+}
 
-const SKILL_IDS = new Set(SKILLS.map((skill) => skill.id));
-const CLASS_BY_ID = new Map(CLASSES.map((classOption) => [classOption.id, classOption]));
-const PROGRESSION_BY_ID = new Map(
-  PROGRESSION_TABLES.filter((table) => table.id !== "am+e").map((table) => [
-    table.id,
-    table,
-  ]),
-);
-
-export const dataCounts = {
-  backgrounds: BACKGROUNDS.length, classes: CLASSES.length, foci: FOCI.length,
-  skills: SKILLS.length, spells: SPELLS.length, progressions: PROGRESSION_TABLES.length,
-  arts: ARTS.length, abilities: ABILITIES.length,
-  equipment: EQUIPMENT.length, equipmentProperties: EQUIPMENT_PROPERTIES.length, startingEquipment: STARTING_EQUIPMENT.length,
-};
-
-function progressionKeyForClasses(classChoices: ClassData[]): string {
+function progressionKeyForClasses(classChoices: ClassData[], progressionById: Map<string, ProgressionTable>): string {
   const shorthand = classChoices
     .map((classOption) => classOption.archetype[0])
     .sort()
     .join("+");
   const reverseShorthand = shorthand.split("+").reverse().join("+");
-  if (PROGRESSION_BY_ID.has(shorthand)) return shorthand;
-  if (PROGRESSION_BY_ID.has(reverseShorthand)) return reverseShorthand;
+  if (progressionById.has(shorthand)) return shorthand;
+  if (progressionById.has(reverseShorthand)) return reverseShorthand;
   return "";
 }
 
@@ -137,6 +136,13 @@ function parseAttackBonus(attackBonus = "") {
 }
 
 export function evaluateCharacter(draft: CharacterDraft) {
+  const { SKILLS, ATTRIBUTES, CLASSES, COMBINATIONS, ABILITIES, CLASS_ABILITY_RULES, BACKGROUNDS,
+    FOCI, SPELLS, EQUIPMENT, EQUIPMENT_PROPERTIES, STARTING_EQUIPMENT, STARTING_ARTS, ARTS,
+    PROGRESSION_TABLES } = readCharacterData();
+  const SKILL_IDS = new Set(SKILLS.map((skill) => skill.id));
+  const CLASS_BY_ID = new Map(CLASSES.map((classOption) => [classOption.id, classOption]));
+  const PROGRESSION_BY_ID = new Map(PROGRESSION_TABLES.filter((table) => table.id !== "am+e")
+    .map((table) => [table.id, table]));
   const issues: string[] = [];
   const attributeEvaluation = evaluateAttributes(draft);
   issues.push(...attributeEvaluation.issues);
@@ -150,7 +156,7 @@ export function evaluateCharacter(draft: CharacterDraft) {
     .filter((classOption): classOption is ClassData => Boolean(classOption))
     .slice(0, 2);
 
-  const progressionKey = progressionKeyForClasses(classChoices);
+  const progressionKey = progressionKeyForClasses(classChoices, PROGRESSION_BY_ID);
   const progression = PROGRESSION_BY_ID.get(progressionKey);
   if (classChoices.length === 2 && !progression) {
     issues.push(`No progression table found for selected class archetypes: ${progressionKey || "unknown"}.`);
@@ -158,10 +164,13 @@ export function evaluateCharacter(draft: CharacterDraft) {
 
   const backgroundEvaluation = evaluateBackground(draft, BACKGROUNDS, SKILLS, ATTRIBUTES);
   issues.push(...backgroundEvaluation.issues);
+  const backgroundAttributes = applyBackgroundAttributeGrants(attributeEvaluation.attributes, backgroundEvaluation.attributeGrants);
 
-  const focusCreation = evaluateFocusCreation({ instances: draft.focusInstances, legacyIds: draft.focus,
+  const artFocusGrants = resolveArtFocusGrants(draft.artChoicesByClass, draft.classChoices, CLASSES, STARTING_ARTS, ARTS, FOCI);
+  issues.push(...artFocusGrants.issues);
+  const focusCreation = evaluateFocusCreation({ instances: draft.focusInstances, legacyIds: draft.focus, grants: artFocusGrants.grants,
     bonusChoices: draft.focusBonusChoices, ruleChoices: draft.focusRuleChoices, foci: FOCI, classes: classChoices,
-    baseLimit: progression?.focus ?? [], skills: SKILLS, attributes: ATTRIBUTES, scores: attributeEvaluation.attributes });
+    baseLimit: progression?.focus ?? [], skills: SKILLS, attributes: ATTRIBUTES, scores: backgroundAttributes.attributes });
   issues.push(...focusCreation.issues);
   const focusAbilities = resolveFocusAbilities(classEvaluation.complete ? focusCreation.applied : [], FOCI, ABILITIES);
   const abilitySelection = mergeAbilityEvaluations(classAbilities, focusAbilities);
@@ -176,10 +185,11 @@ export function evaluateCharacter(draft: CharacterDraft) {
   for (const key of Object.keys(modifiers) as Array<keyof typeof modifiers>) {
     modifiers[key] += focusBonuses.modifierBonuses[key] ?? 0;
   }
+  const savingThrows = calculateSavingThrows(modifiers, focusCreation.saveEffects);
 
   const equipmentInventory = evaluateEquipmentInventory({ startingEquipment: draft.startingEquipment,
     purchases: draft.equipmentPurchases, loadout: draft.equipmentLoadout, dexterity: modifiers.DEX },
-    STARTING_EQUIPMENT, EQUIPMENT, EQUIPMENT_PROPERTIES);
+    STARTING_EQUIPMENT, EQUIPMENT, EQUIPMENT_PROPERTIES, classEvaluation.complete ? focusCreation.baseAc : undefined);
   const equipmentSelection = equipmentInventory.starting;
   const armorClass = equipmentInventory.armorClass;
   issues.push(...equipmentInventory.issues);
@@ -198,9 +208,11 @@ export function evaluateCharacter(draft: CharacterDraft) {
   const skillGrantCounts = Object.fromEntries(Object.values(skillAllocation.states).map((skill) => [skill.id, skill.allotments]));
   const skillScopeComplete = (scope: string) => !skillAllocation.issues.some((issue) => issue.scope === scope);
 
-  const artEvaluation = evaluateArtChoices(draft.artChoicesByClass, classEvaluation.ids, CLASSES, STARTING_ARTS, ARTS);
+  const focusTraditions = classEvaluation.complete ? focusCreation.traditions : [];
+  const focusEffort = evaluateFocusEffort(focusTraditions, skillAllocation.states);
+  const artEvaluation = evaluateArtChoices(draft.artChoicesByClass, classEvaluation.ids, CLASSES, STARTING_ARTS, ARTS, focusTraditions);
   issues.push(...artEvaluation.issues.filter((issue) => !issues.includes(issue)));
-  const spellEvaluation = evaluateSpellChoices(draft.spellChoicesByClassSlot, classEvaluation.ids, SPELLS, draft.spellChoices);
+  const spellEvaluation = evaluateSpellChoices(draft.spellChoicesByClassSlot, classEvaluation.ids, SPELLS, draft.spellChoices, focusTraditions);
   issues.push(...spellEvaluation.issues);
 
   const stepStatus = [
@@ -224,7 +236,7 @@ export function evaluateCharacter(draft: CharacterDraft) {
         Boolean(progression) &&
         selectedFocus.length >= 1 &&
         selectedFocus.length <= focusLimit &&
-        focusCreation.complete &&
+        focusCreation.complete && artFocusGrants.issues.length === 0 &&
         skillScopeComplete('class') && skillScopeComplete('focus'),
     },
     {
@@ -270,7 +282,7 @@ export function evaluateCharacter(draft: CharacterDraft) {
     "Class pairing exclusions are checked in both directions using incompatible_classes and incompatible_archetypes.",
     "Starting arts are applied once per distinct class, using partial or full rules. Fixed grants, restricted choices, and additional picks are separate.",
     "Base hit dice, attack bonus, and focus count come from progression_tables.json; applicable encoded ability overrides determine effective hit dice before HP is calculated.",
-    "Equipment AC uses armor base (10 unarmored), or a higher shield base; a shield instead adds +1 when armor base equals or exceeds it. Final DEX is added afterward. Legacy armor bonuses are ignored.",
+    "AC uses the higher of armor base (10 unarmored) and eligible focus base AC, then applies the usual shield rule and final DEX. Worn armor penalties remain. Legacy armor bonuses are ignored.",
     "Starting equipment grants one fixed package or the sum of three saved d6 rolls multiplied by 10 silver, never both. Client-supplied grants and money totals are not authoritative.",
     "Catalogue purchases use 10 copper per silver and cannot exceed starting funds. Missing prices are not free items. Package grants cannot be sold for extra starting funds.",
     "Only owned equipment may be equipped. A held shield conflicts with an active two-handed weapon. Armor penalties affect Sneak/Exert checks, not learned skill levels.",
@@ -296,13 +308,19 @@ export function evaluateCharacter(draft: CharacterDraft) {
     equipmentSelection,
     equipmentInventory,
     armorClass,
+    savingThrows,
     attributes: focusCreation.scores,
     allocatedAttributes: attributeEvaluation.attributes,
+    backgroundAttributes: backgroundAttributes.attributes,
+    backgroundAttributeBonuses: backgroundAttributes.bonuses,
     focusScoreChanges: focusCreation.scoreChanges,
     focusRuleNotes: focusCreation.notes,
+    focusTraditions,
+    focusEffort,
     focusSelection: { instances: selectedFocus, limit: focusLimit, baseLimit: focusCreation.baseLimit,
+      grantedInstances: focusCreation.grantedInstances, refundedInstances: focusCreation.refundedInstances,
       extraPicks: focusCreation.extraPicks, allowances: focusCreation.allowances,
-      complete: focusCreation.complete, issues: focusCreation.issues },
+      complete: focusCreation.complete && artFocusGrants.issues.length === 0, issues: [...focusCreation.issues, ...artFocusGrants.issues] },
     baseModifiers,
     focusModifierBonuses: focusBonuses.modifierBonuses,
     focusModifierContributions: focusBonuses.modifierContributions,
@@ -316,10 +334,10 @@ export function evaluateCharacter(draft: CharacterDraft) {
       baseHitDice: hitDiceEvaluation.baseHitDice,
       hitDiceAdjustments: hitDiceEvaluation.adjustments,
       focusLimit,
-      physicalSave: 15 - Math.max(modifiers.STR, modifiers.CON) - focusCreation.derived.saves.physical,
-      evasionSave: 15 - Math.max(modifiers.DEX, modifiers.INT) - focusCreation.derived.saves.evasion,
-      mentalSave: 15 - Math.max(modifiers.WIS, modifiers.CHA) - focusCreation.derived.saves.mental,
-      luckSave: 15 - focusCreation.derived.saves.luck,
+      physicalSave: savingThrows.targets.physical,
+      evasionSave: savingThrows.targets.evasion,
+      mentalSave: savingThrows.targets.mental,
+      luckSave: savingThrows.targets.luck,
       ac: armorClass.value,
       progressionAttackBonus,
       baseAttackBonusAdjustment: focusCreation.derived.baseAttackBonusAdjustment,
@@ -327,7 +345,7 @@ export function evaluateCharacter(draft: CharacterDraft) {
       baseAttackBonus,
       focusAttackBonus: focusCreation.derived.attack,
       attackBonus: baseAttackBonus + focusCreation.derived.attack,
-      saveBonuses: focusCreation.derived.saves,
+      saveBonuses: savingThrows.bonuses,
       encumbranceStrengthBonus: focusCreation.derived.encumbranceStrengthBonus,
       systemStrainMaxBonus: focusCreation.derived.systemStrainMaxBonus,
     },

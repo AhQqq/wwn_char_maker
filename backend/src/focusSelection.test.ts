@@ -39,26 +39,33 @@ test("same-name foci remain separate; only explicit prerequisite links join leve
   assert.equal(buildFocusFamilies([focus("alert1"), ambiguous]).length, 2);
 });
 
-test("level 2 is locked with a reason, then unlocks without changing the catalog", () => {
-  assert.ok(focusLockReasons(focus("alert2"), [], foci, warrior, classes, 3).some((reason) => reason.includes("Lv.1")));
-  assert.deepEqual(toggleFocusSelection("alert2", [], foci, warrior, 3), []);
-  assert.deepEqual(focusLockReasons(focus("alert2"), ["alert1"], foci, warrior, classes, 3), []);
+test("higher levels stay readable but locked even with their parents and spare picks", () => {
+  for (const option of foci.filter((item) => item.level > 1)) {
+    const parents = option.requirements.filter((rule) => rule.condition === 'has_focus').map((rule) => rule.id);
+    for (const selected of [[], parents]) {
+      assert.ok(focusLockReasons(option, selected, foci, warrior, classes, 100).some((reason) => reason.includes('only level-1')), option.id);
+      assert.deepEqual(toggleFocusSelection(option.id, selected, foci, warrior, 100), selected);
+    }
+    assert.ok(buildFocusFamilies(foci).some((family) => family.levels.includes(option)));
+  }
 });
 
 test("class locks explain the restriction and follow class archetypes", () => {
-  assert.ok(focusLockReasons(focus("divination1"), [], foci, warrior, classes, 3).some((reason) => reason.includes("Mage")));
+  assert.ok(focusLockReasons(focus("divination1"), [], foci, warrior, classes, 3).includes('필요 클래스: 마법사'));
   assert.deepEqual(toggleFocusSelection("divination1", [], foci, warrior, 3), []);
   assert.deepEqual(focusLockReasons(focus("divination1"), [], foci, mage, classes, 3), []);
   assert.deepEqual(toggleFocusSelection("divination1", [], foci, mage, 3), ["divination1"]);
 });
 
-test("upgrades retain the previous level and cost one additional pick", () => {
+test("blocked upgrades do not spend picks and saved upgrades can still be removed", () => {
   let selected = toggleFocusSelection("alert1", [], foci, warrior, 2);
   selected = toggleFocusSelection("alert2", selected, foci, warrior, 2);
-  assert.deepEqual(selected, ["alert1", "alert2"]);
-  assert.ok(focusLockReasons(focus("dwarves1"), selected, foci, warrior, classes, 2).some((reason) => reason.includes("No focus picks")));
-  assert.deepEqual(toggleFocusSelection("dwarves1", selected, foci, warrior, 2), selected);
-  assert.deepEqual(toggleFocusSelection("alert2", selected, foci, warrior, 2), ["alert1"]);
+  assert.deepEqual(selected, ["alert1"]);
+  selected = toggleFocusSelection("dwarves1", selected, foci, warrior, 2);
+  assert.deepEqual(selected, ["alert1", "dwarves1"]);
+  assert.ok(focusLockReasons(focus("lucky1"), selected, foci, warrior, classes, 2).some((reason) => reason.includes("No focus picks")));
+  assert.deepEqual(toggleFocusSelection("lucky1", selected, foci, warrior, 2), selected);
+  assert.deepEqual(toggleFocusSelection("alert2", ["alert1", "alert2"], foci, warrior, 2), ["alert1"]);
 });
 
 test("removing level 1 removes its upgrades, but keeps unrelated selections", () => {
@@ -80,8 +87,8 @@ test("dependent removal is transitive and unknown or cyclic requirements fail cl
 test("restoration and class changes discard invalid or orphaned levels atomically", () => {
   const ids = ["all_directions_edge_style1", "all_directions_edge_style2", "alert1"];
   assert.deepEqual(normalizeFocusSelection(ids, foci, mage, 3), ["alert1"]);
-  assert.deepEqual(normalizeFocusSelection(["alert2", "alert1"], foci, warrior, 1), []);
-  assert.deepEqual(normalizeFocusSelection(["missing", "alert2", "alert1", "alert1"], foci, warrior, 3), ["alert2", "alert1"]);
+  assert.deepEqual(normalizeFocusSelection(["alert2", "alert1"], foci, warrior, 1), ["alert1"]);
+  assert.deepEqual(normalizeFocusSelection(["missing", "alert2", "alert1", "alert1"], foci, warrior, 3), ["alert1"]);
   assert.deepEqual(normalizeFocusSelection(["alert1"], foci, warrior, 0), []);
 });
 

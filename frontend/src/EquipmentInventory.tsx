@@ -1,3 +1,4 @@
+import { RulesLink } from './RulesLink'
 import { ko, nameFor, rulesText } from './korean'
 import { useState } from 'react'
 import { COPPER_PER_SILVER, equipmentPriceCopper } from '../../shared/equipment'
@@ -24,17 +25,17 @@ export function EquipmentItemDetails({ item, properties }: { item: EquipmentDefi
       <div><dt>표기 하중</dt><dd>{item.encumbrance.raw}</dd></div>
       {item.weapon && <>
         <div><dt>기본 피해</dt><dd>{item.weapon.damage}</dd></div>
-        <div><dt>충격</dt><dd>{item.weapon.shock ? `${item.weapon.shock.damage} / 방어도 ${item.weapon.shock.maxAc}` : '없음'}</dd></div>
+        <div><dt>충격</dt><dd>{item.weapon.shock ? `${item.weapon.shock.damage} / AC ${item.weapon.shock.maxAc}` : '없음'}</dd></div>
         <div><dt>능력치</dt><dd>{item.weapon.attributes.map(nameFor).join(' / ')}</dd></div>
         <div><dt>사거리</dt><dd>{item.weapon.range ? `${item.weapon.range.normal} / ${item.weapon.range.maximum}피트` : '미기재'}</dd></div>
       </>}
       {item.armor && <>
-        <div><dt>기본 방어도</dt><dd>{item.armor.baseAc}</dd></div>
+        <div><dt>기본 AC</dt><dd>{item.armor.baseAc}</dd></div>
         <div><dt>갑옷 분류</dt><dd>{nameFor(item.armor.category)}</dd></div>
         <div><dt>잠행 판정</dt><dd>{item.armor.skillPenalties.sneak}</dd></div>
         <div><dt>운동 판정</dt><dd>{item.armor.skillPenalties.exert}</dd></div>
       </>}
-      {item.shield && <div><dt>방패 방어도</dt><dd>{item.shield.baseAc} / +{item.shield.armorBonus}</dd></div>}
+      {item.shield && <div><dt>방패 AC</dt><dd>{item.shield.baseAc} / +{item.shield.armorBonus}</dd></div>}
     </dl>
     {item.propertyIds.length > 0 && <dl className="equipment-property-list">
       {item.propertyIds.map((id) => {
@@ -58,23 +59,26 @@ export function InventorySummary({ evaluation, equipment, properties }: {
       <p>({starting.choice.rolls.join(' + ')}) &times; 10 = {starting.silver}은화.</p>}
     <p>시작 자금: {starting.silver ?? '--'}은화. 사용: {coinLabel(evaluation.spentCopper)}. 잔액: <strong>{coinLabel(evaluation.remainingCopper)}</strong>.</p>
     {evaluation.items.length > 0 && <EquipmentTable items={evaluation.items} caption="보유 장비: 꾸러미와 구매한 장비" />}
-    <p className="support-text">표기 하중 합계: {evaluation.encumbrance.listed}{!evaluation.encumbrance.complete && ' (일부만 합산하거나 검토가 필요함)'}. 꾸러미의 행별 하중은 수량을 이미 반영하며, 구매한 장비에는 묶음 특성을 적용합니다. 실제 휴대 하중이나 운반 한도는 계산하지 않습니다.</p>
+    <p className="support-text">표기 하중 합계: {evaluation.encumbrance.listed}{!evaluation.encumbrance.complete && ' (일부만 합산하거나 검토가 필요함)'}.</p>
+    <RulesLink topic="equipment">하중 표기 안내</RulesLink>
     {evaluation.encumbrance.reviewIds.length > 0 && <p className="support-text">하중 확인 필요: {evaluation.encumbrance.reviewIds.map((id) => equipment.find((item) => item.id === id)?.name ?? id).join(', ')}.</p>}
     <div className="info-panel equipment-ac" aria-live="polite">
-      <strong>장비 적용 방어도: {armorClass.value ?? '미정'}</strong>
+      <strong>AC: {armorClass.value ?? '미정'}</strong>
       {armorClass.complete ? <>
         <p>기본 {armorClass.base} + 방패 보너스 {armorClass.shieldBonus} + 민첩 수정치 ({armorClass.dexterity}) = {armorClass.value}.</p>
+        <p>기본 AC 출처: {armorClass.baseSource?.name}.</p>
+        {armorClass.focusBases.filter((source) => source.instanceId !== armorClass.baseSource?.instanceId).map((source) =>
+          <p className="support-text" key={source.instanceId}>{source.name}의 기본 AC {source.baseAc}: 더 높은 기본 AC를 사용하므로 중첩하지 않습니다.</p>)}
         <p>갑옷: {armorClass.armor?.name}. 손에 든 방패: {armorClass.shield?.name ?? '없음'}.</p>
-        <p>잠행 판정 {armorClass.skillPenalties.sneak} / 운동 판정 {armorClass.skillPenalties.exert}. 기술 레벨이 아니라 판정에 적용되는 페널티입니다.</p>
+        <p>갑옷 판정 보정: 잠행 {armorClass.skillPenalties.sneak} / 운동 {armorClass.skillPenalties.exert}.</p>
         {armorClass.shield && <p>{properties.find((item) => item.id === 'shield_protection')?.description}</p>}
       </> : <ul className="issue-list">{armorClass.issues.map((issue, index) => <li key={index}>{ko(issue)}</li>)}</ul>}
     </div>
     {armorClass.complete && armorClass.weapon && <details className="equipment-details">
       <summary>사용 무기: {armorClass.weapon.name}</summary>
       <EquipmentItemDetails item={armorClass.weapon} properties={properties} />
-      <p className="support-text">무기의 기본 수치입니다. 기술·능력치·포커스 및 상황에 따른 공격과 피해 보정은 반영하지 않습니다.</p>
+      <RulesLink topic="combat">기본 수치 안내</RulesLink>
     </details>}
-    <p className="support-text">미구현된 포커스·기교의 방어도 예외와 일시적 효과는 직접 적용하세요. 준비·보관 장비의 한도, 운송 수단, 동전 하중은 추적하지 않습니다.</p>
   </div>
 }
 
@@ -111,16 +115,15 @@ export function EquipmentInventory({ evaluation, purchases, loadout, equipment, 
     onLoadout(next)
   }
   return <section className="card equipment-inventory" aria-labelledby="equipment-inventory-title">
-    <div className="card-header"><div><p className="step-label">10-11단계</p><h2 id="equipment-inventory-title">장비 구매와 착용</h2></div></div>
-    <p className="support-text">꾸러미에 포함된 돈이나 굴려서 받은 은화로 장비를 구매한 뒤, 착용하거나 손에 들 장비를 선택하세요. 수량 1은 목록에 표시된 단위입니다. 예를 들어 화살은 20개 한 묶음이지만 투척용 단검은 한 자루입니다. 10동화 = 1은화입니다.</p>
+    <div className="card-header"><div><p className="step-label">04 / 필요한 물건 갖추기</p><h2 id="equipment-inventory-title">장비 구매와 착용</h2></div><RulesLink topic="equipment" /></div>
+    <p className="support-text">장비를 구매한 뒤, 착용하거나 손에 들 장비를 선택하세요.</p>
     <div className="equipment-budget" role="status">
       <span>시작 자금 <strong>{evaluation.starting.silver ?? '--'}은화</strong></span>
       <span>사용 <strong>{coinLabel(evaluation.spentCopper)}</strong></span>
       <span>잔액 <strong>{coinLabel(evaluation.remainingCopper)}</strong></span>
     </div>
     <h3>구매한 장비</h3>
-    <p className="support-text">꾸러미로 받은 장비는 수정하거나 판매할 수 없습니다. 구매 취소 시 비용이 반환됩니다. 시작 꾸러미·획득 방식을 바꾸거나 은화를 다시 굴리면 구매 및 착용 내역이 초기화됩니다.</p>
-    {purchases.length === 0 ? <p>아직 구매한 장비가 없습니다.</p> : <div className="equipment-cart">
+    {purchases.length === 0 ? <div className="catalogue-empty"><strong>구매 내역이 비어 있습니다.</strong><p>아래 장비 목록에서 필요한 물건을 골라 보세요. 꾸러미 장비는 시트에서 확인할 수 있습니다.</p></div> : <div className="equipment-cart">
       {purchases.map((row) => {
         const item = equipment.find((entry) => entry.id === row.id)
         const price = item ? equipmentPriceCopper(item) : null
@@ -160,10 +163,10 @@ export function EquipmentInventory({ evaluation, purchases, loadout, equipment, 
           </article>
         })}
       </div>
-      {!filtered.length && <p>검색 결과가 없습니다.</p>}
+      {!filtered.length && <p className="catalogue-empty">검색 결과가 없습니다. 검색어나 분류를 바꿔 보세요.</p>}
     </details>
     <h3>착용하고 손에 든 장비</h3>
-    <p className="support-text">장비는 자동으로 착용되지 않습니다. 선택하지 않으면 맨몸·방패 없음·비무장 상태입니다. 방패는 보유만 해서는 방어도가 적용되지 않으며, 손에 들어야 합니다.</p>
+    <p className="support-text">보유한 장비를 직접 지정하세요. 자동으로 착용하지 않습니다.</p>
     <div className="form-grid equipment-loadout">
       {(['armorId', 'shieldId', 'weaponId'] as const).map((slot) => <label key={slot}>
         <span>{slot === 'armorId' ? '착용한 갑옷' : slot === 'shieldId' ? '손에 든 방패' : '사용 무기'}</span>

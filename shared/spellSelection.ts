@@ -1,3 +1,5 @@
+import type { FocusTraditionGrant } from './focusTraditions.js'
+
 export type SpellOption = {
   id: string
   name: string
@@ -27,9 +29,11 @@ export function isFirstLevelSpell(spell: Pick<SpellOption, 'level'>): boolean {
   return Boolean(match && Number(match[1]) === 1)
 }
 
-export function spellSchools(classId: unknown): string[] {
+export function spellSchools(classId: unknown, traditions: FocusTraditionGrant[] = []): string[] {
   if (!isSpellcaster(classId)) return []
-  return [HIGH_MAGIC, ...(classId === 'elem' ? [ELEMENTAL_MAGIC] : classId === 'necro' ? [NECROMANCER_MAGIC] : [])]
+  const learned = classId === 'invoker' ? traditions.filter((grant) => grant.classId === classId).map((grant) => grant.traditionId) : []
+  return [HIGH_MAGIC, ...(classId === 'elem' || learned.includes('elem') ? [ELEMENTAL_MAGIC] : []),
+    ...(classId === 'necro' || learned.includes('necro') ? [NECROMANCER_MAGIC] : [])]
 }
 
 export function spellSchoolLabel(category: string): string {
@@ -39,15 +43,15 @@ export function spellSchoolLabel(category: string): string {
   return category
 }
 
-export function canLearnSpell(spell: SpellOption, classId: unknown): boolean {
-  return isFirstLevelSpell(spell) && spellSchools(classId).includes(spell.category)
+export function canLearnSpell(spell: SpellOption, classId: unknown, traditions: FocusTraditionGrant[] = []): boolean {
+  return isFirstLevelSpell(spell) && spellSchools(classId, traditions).includes(spell.category)
 }
 
-export function availableSpells(spells: SpellOption[], classId: unknown): SpellOption[] {
-  return spells.filter((spell) => canLearnSpell(spell, classId))
+export function availableSpells(spells: SpellOption[], classId: unknown, traditions: FocusTraditionGrant[] = []): SpellOption[] {
+  return spells.filter((spell) => canLearnSpell(spell, classId, traditions))
 }
 
-export function normalizeSpellChoices(source: unknown, classIds: string[], spells: SpellOption[]): SpellChoices {
+export function normalizeSpellChoices(source: unknown, classIds: string[], spells: SpellOption[], traditions: FocusTraditionGrant[] = []): SpellChoices {
   const byId = new Map(spells.map((spell) => [spell.id, spell]))
   const result: SpellChoices = [[], []]
   const seen = new Set<string>()
@@ -56,7 +60,7 @@ export function normalizeSpellChoices(source: unknown, classIds: string[], spell
     if (!Array.isArray(picks)) continue
     for (const id of picks) {
       const spell = typeof id === 'string' ? byId.get(id) : undefined
-      if (!spell || seen.has(spell.id) || !canLearnSpell(spell, classIds[slot]) || result[slot].length >= SPELLS_PER_SLOT) continue
+      if (!spell || seen.has(spell.id) || !canLearnSpell(spell, classIds[slot], traditions) || result[slot].length >= SPELLS_PER_SLOT) continue
       result[slot].push(spell.id)
       seen.add(spell.id)
     }
@@ -64,16 +68,16 @@ export function normalizeSpellChoices(source: unknown, classIds: string[], spell
   return result
 }
 
-export function restoreSpellChoices(source: unknown, legacy: unknown, classIds: string[], spells: SpellOption[]) {
+export function restoreSpellChoices(source: unknown, legacy: unknown, classIds: string[], spells: SpellOption[], traditions: FocusTraditionGrant[] = []) {
   if (source !== undefined) {
-    const choices = normalizeSpellChoices(source, classIds, spells)
+    const choices = normalizeSpellChoices(source, classIds, spells, traditions)
     const changed = JSON.stringify(source) !== JSON.stringify(choices)
     return { choices, notice: changed ? 'Saved spell choices were rechecked. Invalid, duplicate, higher-level, or excess selections were removed; review the two picks for each class slot.' : '' }
   }
   const ids: string[] = Array.isArray(legacy) ? [...new Set(legacy.filter((id): id is string => typeof id === 'string'))] : []
   const choices: SpellChoices = [[], []]
   const candidates = ids.map((id) => ({ id, spell: spells.find((spell) => spell.id === id) }))
-    .map(({ id, spell }) => ({ id, slots: CLASS_SLOTS.filter((slot) => spell && canLearnSpell(spell, classIds[slot])) }))
+    .map(({ id, spell }) => ({ id, slots: CLASS_SLOTS.filter((slot) => spell && canLearnSpell(spell, classIds[slot], traditions)) }))
     .filter((candidate) => candidate.slots.length > 0)
     .sort((a, b) => a.slots.length - b.slots.length)
   // Reserve specialist-only picks before assigning High Magic to either class.
@@ -86,8 +90,8 @@ export function restoreSpellChoices(source: unknown, legacy: unknown, classIds: 
   return { choices, notice: ids.length ? `Older spell selections were assigned to eligible class slots. ${removed ? `${removed} unavailable or excess selection(s) removed. ` : ''}Review each slot's two first-level picks.` : '' }
 }
 
-export function spellSelectionReason(spell: SpellOption, slot: ClassSlot, choices: SpellChoices, classIds: string[]) {
-  if (!canLearnSpell(spell, classIds[slot])) return 'This class cannot learn this spell at level 1.'
+export function spellSelectionReason(spell: SpellOption, slot: ClassSlot, choices: SpellChoices, classIds: string[], traditions: FocusTraditionGrant[] = []) {
+  if (!canLearnSpell(spell, classIds[slot], traditions)) return 'This class cannot learn this spell at level 1.'
   if (choices[slot].includes(spell.id)) return ''
   const other: ClassSlot = slot === 0 ? 1 : 0
   if (choices[other].includes(spell.id)) return `Already learned in slot ${other === 0 ? 'A' : 'B'}. A spell can only be learned once.`
@@ -95,19 +99,19 @@ export function spellSelectionReason(spell: SpellOption, slot: ClassSlot, choice
   return ''
 }
 
-export function toggleSpellChoice(choices: SpellChoices, slot: ClassSlot, id: string, classIds: string[], spells: SpellOption[]): SpellChoices {
+export function toggleSpellChoice(choices: SpellChoices, slot: ClassSlot, id: string, classIds: string[], spells: SpellOption[], traditions: FocusTraditionGrant[] = []): SpellChoices {
   const next: SpellChoices = [[...choices[0]], [...choices[1]]]
   if (next[slot].includes(id)) {
     next[slot] = next[slot].filter((selected) => selected !== id)
     return next
   }
   const spell = spells.find((item) => item.id === id)
-  if (!spell || spellSelectionReason(spell, slot, choices, classIds)) return choices
+  if (!spell || spellSelectionReason(spell, slot, choices, classIds, traditions)) return choices
   next[slot].push(id)
   return next
 }
 
-export function evaluateSpellChoices(source: unknown, classIds: string[], spells: SpellOption[], legacy?: unknown) {
+export function evaluateSpellChoices(source: unknown, classIds: string[], spells: SpellOption[], legacy?: unknown, traditions: FocusTraditionGrant[] = []) {
   const issues: string[] = []
   const selected: SpellChoices = [[], []]
   const byId = new Map(spells.map((spell) => [spell.id, spell]))
@@ -137,7 +141,7 @@ export function evaluateSpellChoices(source: unknown, classIds: string[], spells
       }
       seen.add(spell.id)
       if (!isFirstLevelSpell(spell)) issues.push(`${label}: only first-level spells can be learned.`)
-      else if (!spellSchools(classIds[slot]).includes(spell.category)) issues.push(`${label}: ${spellSchoolLabel(spell.category)} is not available to this class.`)
+      else if (!spellSchools(classIds[slot], traditions).includes(spell.category)) issues.push(`${label}: ${spellSchoolLabel(spell.category)} is not available to this class.`)
       else if (index < required) selected[slot].push(spell.id)
     })
     return { slot, required, selected: selected[slot], complete: issues.length === startIssues }

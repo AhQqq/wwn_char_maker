@@ -168,7 +168,7 @@ test('Developed Attribute excludes every mage archetype in frontend and API', ()
   for (const option of classes.filter((item) => item.archetype === 'mage')) {
     assert.deepEqual(eligibleSelectedFoci(['developed_attribute1'], foci, [option]), []);
     assert.deepEqual(normalizeFocusSelection(['developed_attribute1'], foci, [option], 3), []);
-    assert.ok(focusLockReasons(focus('developed_attribute1'), [], foci, [option], classes, 3).some((reason) => /Unavailable.*Mage/.test(reason)));
+    assert.ok(focusLockReasons(focus('developed_attribute1'), [], foci, [option], classes, 3).includes('선택 불가 클래스: 마법사'));
     const result = evaluateCharacter({ ...character(), classChoices: ['warrior', option.id],
       focus: ['developed_attribute1'], focusBonusChoices: { developed_attribute1: { 0: ['STR'] } } });
     assert.equal(result.focusModifierBonuses.STR, 0);
@@ -180,7 +180,7 @@ test('Developed Attribute excludes every mage archetype in frontend and API', ()
 test('Penal and Developed Attribute are mutually exclusive in either selection order', () => {
   for (const [first, second] of [['penal1', 'developed_attribute1'], ['developed_attribute1', 'penal1']] as const) {
     assert.deepEqual(toggleFocusSelection(second, [first], foci, warrior, 3), [first]);
-    assert.ok(focusLockReasons(focus(second), [first], foci, warrior, classes, 3).some((reason) => reason.startsWith('Cannot combine with')));
+    assert.ok(focusLockReasons(focus(second), [first], foci, warrior, classes, 3).includes(`함께 선택 불가: ${focus(first).name} 1레벨`));
     const result = evaluateCharacter({ ...character(), focus: [first, second],
       focusBonusChoices: { penal1: { 0: ['CHA'] }, developed_attribute1: { 0: ['STR'] } } });
     assert.deepEqual(result.focusModifierBonuses, zero);
