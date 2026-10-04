@@ -1,0 +1,26 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+      "dev": "tsx watch src/index.ts",
+      "start": "node dist/index.js",
+      "test": "node --import tsx --test src/background.test.ts src/attributes.test.ts src/focusBonuses.test.ts src/focusFidelity.test.ts src/modifierCaps.test.ts src/focusCreation.test.ts src/focusSelection.test.ts src/skillAllocation.test.ts src/spellSelection.test.ts src/artSelection.test.ts src/classSelection.test.ts src/classAbilities.test.ts src/focusAbilities.test.ts src/abilityEffects.test.ts src/startingEquipment.test.ts src/equipment.test.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.5.2",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
+  }
+}

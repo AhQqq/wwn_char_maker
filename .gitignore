@@ -1,0 +1,51 @@
+# Dependencies and package-manager caches (keep package-lock.json tracked)
+node_modules/
+.npm/
+.pnpm-store/
+
+# Build output and compiler caches
+dist/
+dist-ssr/
+.vite/
+.vite-temp/
+.tsbuildinfo/
+*.tsbuildinfo
+*.local
+
+# Test reports and temporary browser screenshots
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+/qa-artifacts/
+
+# Local environment files; sanitized templates may be committed
+.env
+.env.*
+!.env.example
+!.env.*.example
+!.env.sample
+!.env.*.sample
+!.env.template
+!.env.*.template
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Local editor settings and operating-system files
+**/.vscode/*
+!**/.vscode/extensions.json
+.idea/
+*.suo
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+[Dd]esktop.ini
