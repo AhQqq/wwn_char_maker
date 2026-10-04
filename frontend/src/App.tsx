@@ -3,8 +3,10 @@ import './App.css'
 import { CreationNavigation } from './CreationNavigation'
 import { RulesLink } from './RulesLink'
 import { SaveSummary } from './SaveSummary'
-import { calculateSavingThrows } from '../../shared/savingThrows'
-import type { SavingThrows } from '../../shared/savingThrows'
+import { evaluateCreationEffects, progressionForClasses } from '../../shared/characterCreation'
+import type { CharacterEvaluation } from '../../shared/characterEvaluation'
+import type { AttributeData, SkillData, BackgroundOption as BackgroundData, ClassData, DataAction, ProgressionTable, CharacterData } from '../../shared/characterData'
+import { evaluatePreviewCore } from './characterPreview'
 import { refundGrantedFocusPicks, resolveArtFocusGrants } from '../../shared/artFocusGrants'
 import { ko, nameFor } from './korean'
 import rawAttributes from '../data/attributes.json'
@@ -28,16 +30,15 @@ import type { AttributeAllocation, AttributeKey } from './attributeAllocation'
 import { FocusPicker } from './FocusPicker'
 import { focusGrantLabel, focusInstanceLabel } from './focusSelection'
 import type { FocusOption as FocusData } from './focusSelection'
-import { applyBackgroundAttributeGrants, evaluateBackground } from '../../shared/background'
 import { getModifier } from '../../shared/attributeModifier'
-import { evaluateFocusBonuses, focusCreationLevelReason, modifierLimitText, normalizeFocusBonusChoices } from '../../shared/focusBonuses'
-import { evaluateFocusCreation, evaluateFocusInstances, instanceFocusData, normalizeFocusRuleChoices, pruneFocusInstances, readFocusInstances, removeFocusInstance } from '../../shared/focusCreation'
-import type { BaseAttackAdjustment, FocusInstance, FocusRuleChoice, FocusRuleChoices } from '../../shared/focusCreation'
-import { evaluateFocusEffort, evaluateFocusTraditions } from '../../shared/focusTraditions'
+import { focusCreationLevelReason, modifierLimitText, normalizeFocusBonusChoices } from '../../shared/focusBonuses'
+import { evaluateFocusInstances, instanceFocusData, normalizeFocusRuleChoices, pruneFocusInstances, readFocusInstances, removeFocusInstance } from '../../shared/focusCreation'
+import type { FocusInstance, FocusRuleChoice, FocusRuleChoices } from '../../shared/focusCreation'
+import { evaluateFocusTraditions } from '../../shared/focusTraditions'
 import { FOCUS_ALLOWANCE_LABELS } from './korean'
 import type { FocusAllowance } from '../../shared/focusAllowances'
 import { FocusInstances } from './FocusInstances'
-import { classSkillGrants, evaluateCreationSkills, normalizeClassBonusChoices, skillChoiceReason } from '../../shared/skillAllocation'
+import { classSkillGrants, normalizeClassBonusChoices, skillChoiceReason } from '../../shared/skillAllocation'
 import type { ClassBonusChoices, ClassSkillGrant } from '../../shared/skillAllocation'
 import { SkillChoiceFeedback, SkillChoiceOptions } from './SkillChoices'
 import { SKILL_ICONS } from './skillIcons'
@@ -45,82 +46,26 @@ import { isFirstLevelSpell, normalizeSpellChoices, restoreSpellChoices, toggleSp
 import type { ClassSlot, SpellChoices, SpellOption as SpellData } from '../../shared/spellSelection'
 import { SpellPicker } from './SpellPicker'
 import { classChoiceReason, evaluateClassChoices } from '../../shared/classSelection'
-import type { SelectableClass } from '../../shared/classSelection'
 import { classBuildName } from '../../shared/classBuild'
 import type { ClassCombinations } from '../../shared/classBuild'
 import { evaluateArtChoices, getArtPlans, normalizeArtChoices, restoreArtChoices, toggleArtChoice } from '../../shared/artSelection'
 import type { ArtChoices } from '../../shared/artSelection'
 import { ARTS, STARTING_ARTS } from './artData'
 import { ArtPicker } from './ArtPicker'
-import { evaluateClassAbilities } from '../../shared/classAbilities'
 import type { AbilityDefinition, ClassAbilityRules } from '../../shared/classAbilities'
-import { mergeAbilityEvaluations } from '../../shared/abilities'
-import { resolveFocusAbilities } from '../../shared/focusAbilities'
 import { AbilitySheet } from './AbilitySheet'
-import type { HitDiceAdjustment } from '../../shared/abilityEffects'
-import { evaluateStartingEquipment, restoreStartingEquipment } from '../../shared/startingEquipment'
+import { restoreStartingEquipment } from '../../shared/startingEquipment'
 import type { EquipmentDefinition, EquipmentPackage, EquipmentProperty, StartingEquipmentChoice } from '../../shared/startingEquipment'
 import { emptyLoadout, evaluateEquipmentInventory, pruneEquipmentLoadout, restoreEquipmentInventory } from '../../shared/equipment'
-import type { ArmorClassEvaluation, EquipmentLoadout, EquipmentPurchase } from '../../shared/equipment'
+import type { EquipmentLoadout, EquipmentPurchase } from '../../shared/equipment'
 import { EquipmentPicker } from './EquipmentPicker'
 import { EquipmentInventory, InventorySummary } from './EquipmentInventory'
 
 const LOCAL_STORAGE_KEY = 'wwn-character-draft'
 
-type Archetype = 'warrior' | 'expert' | 'mage'
 type BackgroundRollTable = 'growth' | 'learn'
 type BackgroundMethod = '' | 'pick' | 'roll'
 type FocusBonusChoices = Record<string, Record<string, string[]>>
-type FocusBonusDetail = ReturnType<typeof evaluateFocusBonuses>['details'][number]
-
-type AttributeData = {
-  id: AttributeKey
-  name: string
-  description: string
-  tags: string[]
-}
-
-type SkillData = {
-  id: string
-  name: string
-  description: string
-  tags: string[]
-}
-
-type DataAction = {
-  action: string
-  id?: string
-  count?: number
-  filter?: {
-    tags?: string[]
-  }
-}
-
-type BackgroundData = {
-  id: string
-  name: string
-  description: string
-  free_skill: DataAction[]
-  sugg_skill: DataAction[]
-  growth: DataAction[]
-  learn: DataAction[]
-}
-
-type ClassData = SelectableClass & {
-  name: string
-  archetype: Archetype
-  spells: boolean
-  arts: boolean
-  bonus: DataAction[]
-  art_prog: unknown[]
-}
-
-type ProgressionTable = {
-  id: string
-  hd: string
-  ab: string
-  focus: FocusAllowance[]
-}
 
 type BackgroundRollResult = {
   table: BackgroundRollTable
@@ -156,50 +101,10 @@ type Draft = AttributeAllocation & {
   equipmentLoadout: EquipmentLoadout
 }
 
-type Evaluation = {
-  armorClass?: ArmorClassEvaluation
-  savingThrows?: SavingThrows
-  valid: boolean
-  issues: string[]
-  assumptions: string[]
-  fullClass: string
-  modifiers: Record<AttributeKey, number>
-  baseModifiers: Record<AttributeKey, number>
-  focusModifierBonuses: Record<AttributeKey, number>
-  modifierCaps: ReturnType<typeof evaluateFocusBonuses>['modifierCaps']
-  attributes: Record<string, number>
-  backgroundAttributeBonuses: Partial<Record<AttributeKey, number>>
-  focusBonuses: FocusBonusDetail[]
-  skillGrantCounts: Record<string, number>
-  derived: {
-    hitPoints: number
-    hitDie: number
-    hitDice: string
-    baseHitDice: string
-    hitDiceAdjustments: HitDiceAdjustment[]
-    focusLimit: number
-    physicalSave: number
-    evasionSave: number
-    mentalSave: number
-    luckSave: number
-    ac: number | null
-    baseAttackBonus: number
-    progressionAttackBonus: number
-    baseAttackBonusAdjustment: number
-    baseAttackAdjustments: BaseAttackAdjustment[]
-    focusAttackBonus: number
-    attackBonus: number
-    saveBonuses: Record<string, number>
-    encumbranceStrengthBonus: number
-    systemStrainMaxBonus: number
-  }
-  selectedSkills: string[]
-  stepStatus: Array<{
-    key: string
-    label: string
-    complete: boolean
-  }>
-}
+type Evaluation = Pick<CharacterEvaluation,
+  'valid' | 'issues' | 'assumptions' | 'fullClass' | 'modifiers' | 'baseModifiers' | 'focusModifierBonuses' |
+  'modifierCaps' | 'attributes' | 'backgroundAttributeBonuses' | 'focusBonuses' | 'skillGrantCounts' |
+  'derived' | 'selectedSkills' | 'stepStatus'> & Partial<Pick<CharacterEvaluation, 'armorClass' | 'savingThrows'>>
 
 const ATTRIBUTES = rawAttributes as AttributeData[]
 const SKILLS = rawSkills as SkillData[]
@@ -214,13 +119,14 @@ const SPELLS = rawSpells as SpellData[]
 const EQUIPMENT = rawEquipment as EquipmentDefinition[]
 const EQUIPMENT_PROPERTIES = rawEquipmentProperties as EquipmentProperty[]
 const STARTING_EQUIPMENT = rawStartingEquipment as EquipmentPackage[]
+const CHARACTER_DATA = { SKILLS, ATTRIBUTES, CLASSES, COMBINATIONS, ABILITIES, CLASS_ABILITY_RULES, BACKGROUNDS,
+  FOCI, SPELLS, EQUIPMENT, EQUIPMENT_PROPERTIES, STARTING_EQUIPMENT, STARTING_ARTS, ARTS, PROGRESSION_TABLES } satisfies CharacterData
 
 const SKILL_BY_ID = new Map(SKILLS.map((skill) => [skill.id, skill]))
 const CLASS_BY_ID = new Map(CLASSES.map((classOption) => [classOption.id, classOption]))
 const BACKGROUND_BY_ID = new Map(BACKGROUNDS.map((background) => [background.id, background]))
 const FOCUS_BY_ID = new Map(FOCI.map((focus) => [focus.id, focus]))
 const SPELL_BY_ID = new Map(SPELLS.map((spell) => [spell.id, spell]))
-const PROGRESSION_BY_ID = new Map(PROGRESSION_TABLES.filter((table) => table.id !== 'am+e').map((table) => [table.id, table]))
 
 const FIRST_LEVEL_SPELLS = SPELLS.filter(isFirstLevelSpell)
 
@@ -257,7 +163,7 @@ const EMPTY_EVALUATION: Evaluation = {
     baseAttackAdjustments: [],
     focusAttackBonus: 0,
     attackBonus: 0,
-    saveBonuses: {},
+    saveBonuses: { physical: 0, evasion: 0, mental: 0, luck: 0 },
     encumbranceStrengthBonus: 0,
     systemStrainMaxBonus: 0,
   },
@@ -273,12 +179,8 @@ function classLabel(classOption: ClassData) {
   return `${classOption.name} (${nameFor(classOption.archetype)})`
 }
 
-function progressionKeyForClasses(classOptions: ClassData[]) {
-  const shorthand = classOptions.map((classOption) => classOption.archetype[0]).sort().join('+')
-  const reverseShorthand = shorthand.split('+').reverse().join('+')
-  if (PROGRESSION_BY_ID.has(shorthand)) return shorthand
-  if (PROGRESSION_BY_ID.has(reverseShorthand)) return reverseShorthand
-  return ''
+function classProgression(classOptions: ClassData[]) {
+  return progressionForClasses(classOptions, PROGRESSION_TABLES).progression
 }
 
 function focusBudgetForProgression(table?: ProgressionTable): FocusAllowance[] {
@@ -387,7 +289,7 @@ function createInitialDraft(): Draft {
   const background = BACKGROUNDS[0]
   const classChoices = CLASSES.slice(0, 2).map((classOption) => classOption.id)
   const selectedClasses = classChoices.map((classId) => CLASS_BY_ID.get(classId)).filter(Boolean) as ClassData[]
-  const budget = focusBudgetForProgression(PROGRESSION_BY_ID.get(progressionKeyForClasses(selectedClasses)))
+  const budget = focusBudgetForProgression(classProgression(selectedClasses))
   const focus = FOCI.find((item) => evaluateFocusInstances([{ instanceId: item.id, focusId: item.id }], undefined, FOCI, selectedClasses, budget).complete)?.id ?? ''
 
   return {
@@ -430,7 +332,7 @@ function draftArtFocusGrants(draft: Pick<Draft, 'classChoices'> & { artChoicesBy
 function draftTraditions(draft: Pick<Draft, 'classChoices' | 'focusInstances' | 'focusRuleChoices'> & { artChoicesByClass?: unknown }) {
   if (!evaluateClassChoices(draft.classChoices, CLASSES).complete) return []
   const classes = draft.classChoices.map((id) => CLASS_BY_ID.get(id)).filter((item): item is ClassData => Boolean(item))
-  const budget = focusBudgetForProgression(PROGRESSION_BY_ID.get(progressionKeyForClasses(classes)))
+  const budget = focusBudgetForProgression(classProgression(classes))
   const selection = evaluateFocusInstances(draft.focusInstances, undefined, FOCI, classes, budget, draftArtFocusGrants(draft).grants)
   return evaluateFocusTraditions(selection.applied, draft.focusRuleChoices, FOCI, draft.classChoices).grants
 }
@@ -538,17 +440,8 @@ function readSavedDraft(): { draft: Draft; spellNotice: string; artNotice: strin
 }
 
 function evaluateDraftSkills(draft: Draft) {
-  const classes = draft.classChoices.map((id) => CLASS_BY_ID.get(id)).filter((item): item is ClassData => Boolean(item))
-  const budget = focusBudgetForProgression(PROGRESSION_BY_ID.get(progressionKeyForClasses(classes)))
-  const background = evaluateBackground(draft, BACKGROUNDS, SKILLS, ATTRIBUTES)
-  const backgroundAttributes = applyBackgroundAttributeGrants(allocatedAttributes(draft), background.attributeGrants)
-  const artFocusGrants = draftArtFocusGrants(draft)
-  const focusCreation = evaluateFocusCreation({ instances: draft.focusInstances, bonusChoices: draft.focusBonusChoices, grants: artFocusGrants.grants,
-    ruleChoices: draft.focusRuleChoices, foci: FOCI, classes, baseLimit: budget, skills: SKILLS,
-    attributes: ATTRIBUTES, scores: backgroundAttributes.attributes })
-  const bonuses = focusCreation.bonuses
-  const allocation = evaluateCreationSkills(background.skillGrants, classes, bonuses.skillGrants, draft.freeSkill, SKILLS.map((skill) => skill.id), draft.classBonusChoices)
-  return { allocation, bonuses, focusCreation, backgroundAttributes, artFocusIssues: artFocusGrants.issues }
+  const core = evaluatePreviewCore(draft, CHARACTER_DATA)
+  return { ...core, allocation: core.skillAllocation, bonuses: core.focusCreation.bonuses, artFocusIssues: core.artFocusGrants.issues }
 }
 
 function App() {
@@ -580,24 +473,21 @@ function App() {
   const fixedBackgroundSkill = defaultBackgroundSkill(activeBackground)
 
   const activeProgression = useMemo(
-    () => PROGRESSION_BY_ID.get(progressionKeyForClasses(selectedClasses)),
+    () => classProgression(selectedClasses),
     [selectedClasses],
   )
 
   const allocatedScores = allocatedAttributes(draft)
-  const equipmentEvaluation = evaluateStartingEquipment(draft.startingEquipment, STARTING_EQUIPMENT, EQUIPMENT)
-  const { allocation: skillAllocation, bonuses: localFocusBonuses, focusCreation, backgroundAttributes, artFocusIssues } = evaluateDraftSkills(draft)
+  const core = evaluateDraftSkills(draft)
+  const { allocation: skillAllocation, bonuses: localFocusBonuses, focusCreation, backgroundAttributes, artFocusIssues } = core
   const selectedFocusInstances = focusCreation.instances
   const allFocusInstances = [...selectedFocusInstances, ...focusCreation.grantedInstances]
   const classValidation = evaluateClassChoices(draft.classChoices, CLASSES)
-  const localModifiers = Object.fromEntries(Object.entries(focusCreation.baseModifiers).map(([id, value]) =>
-    [id, value + (localFocusBonuses.modifierBonuses[id] ?? 0)]))
-  const localSavingThrows = calculateSavingThrows(localModifiers, focusCreation.saveEffects)
+  const { modifiers: localModifiers, savingThrows: localSavingThrows, equipmentInventory, abilitySelection, focusTraditions, focusEffort } =
+    evaluateCreationEffects(draft, CHARACTER_DATA, core, classValidation)
+  const equipmentEvaluation = equipmentInventory.starting
   const displayedSaves = evaluationCurrent && evaluation.savingThrows ? evaluation.savingThrows : localSavingThrows
-  const localDexterity = (focusCreation.baseModifiers.DEX ?? 0) + (localFocusBonuses.modifierBonuses.DEX ?? 0)
-  const equipmentInventory = evaluateEquipmentInventory({ startingEquipment: draft.startingEquipment,
-    purchases: draft.equipmentPurchases, loadout: draft.equipmentLoadout, dexterity: localDexterity },
-    STARTING_EQUIPMENT, EQUIPMENT, EQUIPMENT_PROPERTIES, classValidation.complete ? focusCreation.baseAc : undefined)
+  const localDexterity = localModifiers.DEX
   const displayedArmorClass = evaluationCurrent && evaluation.armorClass ? evaluation.armorClass : equipmentInventory.armorClass
   const displayedAC = displayedArmorClass.value
   const focusLimit = focusCreation.limit
@@ -606,11 +496,6 @@ function App() {
   const fixedClassGrants = classGrants.filter((grant) => grant.kind === 'fixed')
   const classSkillChoices = classGrants.filter((grant) => grant.kind === 'choice')
   const resolvedClassBuild = classBuildName(draft.classChoices, CLASSES, COMBINATIONS)
-  const classAbilities = evaluateClassAbilities(draft.classChoices, CLASSES, ABILITIES, CLASS_ABILITY_RULES)
-  const focusAbilities = resolveFocusAbilities(classValidation.complete ? focusCreation.applied : [], FOCI, ABILITIES)
-  const abilitySelection = mergeAbilityEvaluations(classAbilities, focusAbilities)
-  const focusTraditions = classValidation.complete ? focusCreation.traditions : []
-  const focusEffort = evaluateFocusEffort(focusTraditions, skillAllocation.states)
   const artPlans = getArtPlans(draft.classChoices, CLASSES, STARTING_ARTS, ARTS, focusTraditions)
   const artEvaluation = evaluateArtChoices(draft.artChoicesByClass, draft.classChoices, CLASSES, STARTING_ARTS, ARTS, focusTraditions)
 
@@ -677,7 +562,7 @@ function App() {
       const nextChoices = [...current.classChoices]
       nextChoices[index] = choice
       const nextClasses = nextChoices.map((id) => CLASS_BY_ID.get(id)).filter((item): item is ClassData => Boolean(item))
-      const nextBudget = focusBudgetForProgression(PROGRESSION_BY_ID.get(progressionKeyForClasses(nextClasses)))
+      const nextBudget = focusBudgetForProgression(classProgression(nextClasses))
       const nextArtChoices = normalizeArtChoices(current.artChoicesByClass, nextChoices, CLASSES, STARTING_ARTS, ARTS)
       const grants = draftArtFocusGrants({ classChoices: nextChoices, artChoicesByClass: nextArtChoices }).grants
       const paidInstances = refundGrantedFocusPicks(current.focusInstances, draftArtFocusGrants(current).grants)
@@ -778,7 +663,7 @@ function App() {
   function toggleFocus(id: string) {
     setDraft((current) => {
       const currentClasses = current.classChoices.map((classId) => CLASS_BY_ID.get(classId)).filter((item): item is ClassData => Boolean(item))
-      const budget = focusBudgetForProgression(PROGRESSION_BY_ID.get(progressionKeyForClasses(currentClasses)))
+      const budget = focusBudgetForProgression(classProgression(currentClasses))
       const definition = FOCUS_BY_ID.get(id)
       if (!definition) return current
       const grants = draftArtFocusGrants(current).grants
@@ -800,7 +685,7 @@ function App() {
   function removeSelectedFocus(id: string) {
     setDraft((current) => {
       const classes = current.classChoices.map((classId) => CLASS_BY_ID.get(classId)).filter((item): item is ClassData => Boolean(item))
-      const budget = focusBudgetForProgression(PROGRESSION_BY_ID.get(progressionKeyForClasses(classes)))
+      const budget = focusBudgetForProgression(classProgression(classes))
       const focusInstances = removeFocusInstance(current.focusInstances, id, FOCI, classes, budget, draftArtFocusGrants(current).grants)
       return reconcileMagicChoices({ ...current, focusInstances, focusBonusChoices: keepFocusBonusChoices(current.focusBonusChoices, focusInstances),
         focusRuleChoices: normalizeFocusRuleChoices(current.focusRuleChoices, focusInstances) })

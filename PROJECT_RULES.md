@@ -9,6 +9,14 @@ The derived character sheet explicitly displays **레벨 1**. Only **focus level
 The builder must follow these rules exactly.
 Character schema is in `CHARACTER_SCHEMA.md`
 
+## Shared Evaluation Boundary
+
+- Catalogue types live in `shared/characterData.ts`. Attribute keys, the fixed array and submitted-attribute validation live in `shared/attributes.ts`; editor allocation helpers remain in the frontend.
+- `shared/characterCreation.ts` coordinates progression lookup, background growth, art-granted focus refunds, focus choices/effects and skill allotments. Its effects stage derives modifiers, saves, equipment AC, abilities, hit dice/HP, attack adjustments and tradition Effort from that core result.
+- The frontend preview supplies restored editor scores through `frontend/src/characterPreview.ts`. It does not replace server validation. `shared/characterEvaluation.ts` validates submitted attributes and classes afresh, then assembles issues, stage completion and the API response. The response type is inferred from this shared evaluator rather than copied into the frontend.
+- `backend/src/character.ts` loads catalogues and delegates to the shared evaluator. Shared calculation modules must not depend on filesystem access, React, browser storage or frontend imports. They must not mutate drafts or catalogues.
+- Preserve the existing calculation order, class-validity gates, issue ordering, saved-draft migrations and API fields when refactoring. Type declarations alone do not validate incoming JSON; cached skills, grants, scores and derived totals remain non-authoritative.
+
 ## Registered Reference Sources
 
 - **User-published Korean SRD:** `D:\Hub\Downloads\WWN_SRD\Main.tex` (registered 2026-10-04).

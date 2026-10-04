@@ -1,7 +1,8 @@
-export const ATTRIBUTE_KEYS = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'] as const
-export const ARRAY_VALUES = [14, 12, 11, 10, 9, 7] as const
+import { ATTRIBUTE_KEYS, ARRAY_VALUES } from '../../shared/attributes.js'
+import type { AttributeKey } from '../../shared/attributes.js'
+export { ATTRIBUTE_KEYS, ARRAY_VALUES } from '../../shared/attributes.js'
+export type { AttributeKey } from '../../shared/attributes.js'
 
-export type AttributeKey = (typeof ATTRIBUTE_KEYS)[number]
 export type AttributeAllocation = {
   attributeMethod: 'array' | 'rolled'
   // Original scores stay intact when the optional replacement moves or is removed.
