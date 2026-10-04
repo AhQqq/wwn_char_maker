@@ -2,7 +2,8 @@ import { startTransition, useDeferredValue, useEffect, useMemo, useState } from 
 import './App.css'
 import { CreationNavigation } from './CreationNavigation'
 import { RulesLink } from './RulesLink'
-import { SaveSummary } from './SaveSummary'
+import { CharacterSheet } from './CharacterSheet'
+import { plusModifier } from './formatting'
 import { evaluateCreationEffects, progressionForClasses } from '../../shared/characterCreation'
 import type { CharacterEvaluation } from '../../shared/characterEvaluation'
 import type { AttributeData, SkillData, BackgroundOption as BackgroundData, ClassData, DataAction, ProgressionTable, CharacterData } from '../../shared/characterData'
@@ -28,7 +29,7 @@ import {
 } from './attributeAllocation'
 import type { AttributeAllocation, AttributeKey } from './attributeAllocation'
 import { FocusPicker } from './FocusPicker'
-import { focusGrantLabel, focusInstanceLabel } from './focusSelection'
+import { focusInstanceLabel } from './focusSelection'
 import type { FocusOption as FocusData } from './focusSelection'
 import { getModifier } from '../../shared/attributeModifier'
 import { focusCreationLevelReason, modifierLimitText, normalizeFocusBonusChoices } from '../../shared/focusBonuses'
@@ -41,7 +42,6 @@ import { FocusInstances } from './FocusInstances'
 import { classSkillGrants, normalizeClassBonusChoices, skillChoiceReason } from '../../shared/skillAllocation'
 import type { ClassBonusChoices, ClassSkillGrant } from '../../shared/skillAllocation'
 import { SkillChoiceFeedback, SkillChoiceOptions } from './SkillChoices'
-import { SKILL_ICONS } from './skillIcons'
 import { isFirstLevelSpell, normalizeSpellChoices, restoreSpellChoices, toggleSpellChoice } from '../../shared/spellSelection'
 import type { ClassSlot, SpellChoices, SpellOption as SpellData } from '../../shared/spellSelection'
 import { SpellPicker } from './SpellPicker'
@@ -53,13 +53,12 @@ import type { ArtChoices } from '../../shared/artSelection'
 import { ARTS, STARTING_ARTS } from './artData'
 import { ArtPicker } from './ArtPicker'
 import type { AbilityDefinition, ClassAbilityRules } from '../../shared/classAbilities'
-import { AbilitySheet } from './AbilitySheet'
 import { restoreStartingEquipment } from '../../shared/startingEquipment'
 import type { EquipmentDefinition, EquipmentPackage, EquipmentProperty, StartingEquipmentChoice } from '../../shared/startingEquipment'
 import { emptyLoadout, evaluateEquipmentInventory, pruneEquipmentLoadout, restoreEquipmentInventory } from '../../shared/equipment'
 import type { EquipmentLoadout, EquipmentPurchase } from '../../shared/equipment'
 import { EquipmentPicker } from './EquipmentPicker'
-import { EquipmentInventory, InventorySummary } from './EquipmentInventory'
+import { EquipmentInventory } from './EquipmentInventory'
 
 const LOCAL_STORAGE_KEY = 'wwn-character-draft'
 
@@ -126,7 +125,6 @@ const SKILL_BY_ID = new Map(SKILLS.map((skill) => [skill.id, skill]))
 const CLASS_BY_ID = new Map(CLASSES.map((classOption) => [classOption.id, classOption]))
 const BACKGROUND_BY_ID = new Map(BACKGROUNDS.map((background) => [background.id, background]))
 const FOCUS_BY_ID = new Map(FOCI.map((focus) => [focus.id, focus]))
-const SPELL_BY_ID = new Map(SPELLS.map((spell) => [spell.id, spell]))
 
 const FIRST_LEVEL_SPELLS = SPELLS.filter(isFirstLevelSpell)
 
@@ -317,10 +315,6 @@ function createInitialDraft(): Draft {
   }
 }
 
-function plusModifier(value: number) {
-  return value >= 0 ? `+${value}` : `${value}`
-}
-
 function randomInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min
 }
@@ -489,7 +483,6 @@ function App() {
   const displayedSaves = evaluationCurrent && evaluation.savingThrows ? evaluation.savingThrows : localSavingThrows
   const localDexterity = localModifiers.DEX
   const displayedArmorClass = evaluationCurrent && evaluation.armorClass ? evaluation.armorClass : equipmentInventory.armorClass
-  const displayedAC = displayedArmorClass.value
   const focusLimit = focusCreation.limit
   const skillOptions = SKILLS.map((skill) => ({ id: skill.id, label: skillLabel(skill.id) }))
   const classGrants = classSkillGrants(selectedClasses, draft.classBonusChoices)
@@ -1241,179 +1234,12 @@ function App() {
         </div>
 
         <aside className="summary-column">
-          <section className="card summary-card" id="character-sheet" aria-labelledby="character-sheet-title" tabIndex={-1}>
-            <div className="card-header">
-              <div>
-                <p className="step-label">나의 모험가</p>
-                <h2 id="character-sheet-title">캐릭터 시트</h2>
-                <RulesLink topic="scope">자동 적용 범위</RulesLink>
-              </div>
-              <span className={evaluationCurrent && evaluation.valid && evaluation.stepStatus.every((step) => step.complete) ? 'sheet-status is-complete' : 'sheet-status'}>
-                {evaluationError ? '연결 필요' : !evaluationCurrent ? '계산 중' : evaluation.valid && evaluation.stepStatus.every((step) => step.complete) ? '생성 완료' : '작성 중'}
-              </span>
-            </div>
-
-            <div className="sheet-scroll-content" tabIndex={0} role="region" aria-label="캐릭터 시트 상세">
-            <section className="class-build-summary" aria-label="클래스 조합" aria-live="polite">
-              <p className="character-name">{draft.name.trim() || '이름 없는 모험가'}</p>
-              <p className="support-text">레벨 1</p>
-              <h3>클래스 조합</h3>
-              <strong className="class-build-name">{ko(resolvedClassBuild)}</strong>
-              <p className="support-text">{[0, 1].map((slot) => CLASS_BY_ID.get(draft.classChoices[slot])?.name ?? '미선택').join(' / ')}</p>
-              <p className="focus-english-name" lang="en">{[0, 1].map((slot) => CLASS_BY_ID.get(draft.classChoices[slot])?.eng_name).filter(Boolean).join(' / ')}</p>
-            </section>
-
-            <div className="sheet-vitals" aria-label="주요 전투 수치" aria-busy={!evaluationCurrent && !evaluationError}>
-              <div><span>HP</span><strong>{evaluationCurrent ? evaluation.derived.hitPoints : '--'}</strong></div>
-              <div><span>AC</span><strong>{displayedAC ?? '미정'}</strong>
-                {displayedArmorClass.baseSource?.kind === 'focus' && <small>{displayedArmorClass.baseSource.name}</small>}
-              </div>
-              <div><span>공격 보너스</span><strong>{evaluationCurrent ? plusModifier(evaluation.derived.attackBonus) : '--'}</strong></div>
-            </div>
-            {(!evaluationCurrent || evaluationError) && <p className="sheet-update-notice" role="status">
-              {evaluationError ? '서버 연결 필요' : '계산 중'}
-            </p>}
-            <details className="sheet-disclosure">
-              <summary>클래스·포커스 능력 <span>{abilitySelection.abilities.length}개</span></summary>
-              <AbilitySheet evaluation={abilitySelection} classes={CLASSES} foci={FOCI} instances={allFocusInstances} />
-            </details>
-
-            <div className="summary-block">
-              <h3>능력치 수정치</h3>
-              <div className="modifier-grid">
-                {ATTRIBUTE_KEYS.map((key) => (
-                  <div key={key}>
-                    <span>{nameFor(key)}</span>
-                    <strong>{backendOnline ? plusModifier(evaluation.modifiers[key]) : '--'}</strong>
-                    <small>능력치 {backendOnline ? evaluation.attributes?.[key] ?? allocatedScores[key] : allocatedScores[key]}</small>
-                    {backendOnline && evaluation.attributes?.[key] !== undefined && (evaluation.attributes[key] !== allocatedScores[key] || Boolean(evaluation.backgroundAttributeBonuses?.[key])) && <small>배정 {allocatedScores[key]}{Boolean(evaluation.backgroundAttributeBonuses?.[key]) && ` · 배경 +${evaluation.backgroundAttributeBonuses[key]}`}</small>}
-                    {backendOnline && Boolean(evaluation.focusModifierBonuses?.[key]) && <small>기본 {plusModifier(evaluation.baseModifiers?.[key] ?? 0)} / 포커스 {plusModifier(evaluation.focusModifierBonuses?.[key] ?? 0)}</small>}
-                    {backendOnline && evaluation.modifierCaps?.[key] && (evaluation.modifierCaps[key].min !== -2 || evaluation.modifierCaps[key].max !== 2) && <small>한계 {plusModifier(evaluation.modifierCaps[key].min)} ~ {plusModifier(evaluation.modifierCaps[key].max)}</small>}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <details className="sheet-disclosure">
-              <summary>전투 수치와 내성 <span>상세 계산</span></summary>
-              <RulesLink topic="combat">계산 규칙</RulesLink>
-            <div className="sheet-grid">
-              <div><span>HP</span><strong>{evaluation.derived.hitPoints}</strong></div>
-              <div><span>히트 주사위</span><strong>{evaluation.derived.hitDice || `d${evaluation.derived.hitDie || 0}`}</strong></div>
-              <div><span>AC</span><strong>{displayedAC ?? '미정'}</strong></div>
-              <div><span>기본 공격 보너스</span><strong>{plusModifier(evaluation.derived.baseAttackBonus)}</strong></div>
-              <div><span>포커스 공격 보너스</span><strong>{plusModifier(evaluation.derived.focusAttackBonus ?? 0)}</strong></div>
-              <div><span>총 공격 보너스</span><strong>{plusModifier(evaluation.derived.attackBonus ?? evaluation.derived.baseAttackBonus)}</strong></div>
-              <div><span>육체 내성 목표값</span><strong>{displayedSaves.targets.physical}</strong></div>
-              <div><span>회피 내성 목표값</span><strong>{displayedSaves.targets.evasion}</strong></div>
-              <div><span>정신 내성 목표값</span><strong>{displayedSaves.targets.mental}</strong></div>
-              <div><span>행운 내성 목표값</span><strong>{displayedSaves.targets.luck}</strong></div>
-            </div>
-
-            {backendOnline && Boolean(evaluation.derived.hitDiceAdjustments?.length) && <div className="info-panel" aria-label="히트 주사위 조정">
-              <strong>히트 주사위 조정</strong>
-              <p>{evaluation.derived.baseHitDice} &rarr; {evaluation.derived.hitDice}: {evaluation.derived.hitDiceAdjustments.map((item) => nameFor(item.abilityId)).join(', ')}.</p>
-            </div>}
-
-            {backendOnline && Boolean(evaluation.derived.baseAttackAdjustments?.length) && <div className="info-panel" aria-label="기본 공격 보너스 조정">
-              <strong>기본 공격 보너스 조정</strong>
-              <p>클래스 성장 수치 {plusModifier(evaluation.derived.progressionAttackBonus)} + 조정 ({plusModifier(evaluation.derived.baseAttackBonusAdjustment)}) = 기본 공격 보너스 {plusModifier(evaluation.derived.baseAttackBonus)}.</p>
-              <ul>{evaluation.derived.baseAttackAdjustments.map((item) => <li key={item.instanceId}>{FOCUS_BY_ID.get(item.focusId)?.name || '알 수 없는 포커스'}: {plusModifier(item.value)}</li>)}</ul>
-            </div>}
-
-            <SaveSummary saves={displayedSaves} />
-            {Boolean(evaluation.derived.encumbranceStrengthBonus || evaluation.derived.systemStrainMaxBonus) && <div className="info-panel">
-              <p>하중 계산용 근력 보정: {plusModifier(evaluation.derived.encumbranceStrengthBonus ?? 0)}</p>
-              <p>최대 기관계 부담 보정: {plusModifier(evaluation.derived.systemStrainMaxBonus ?? 0)}</p>
-            </div>}
-
-            </details>
-            <details className="sheet-disclosure">
-              <summary>시작 장비와 소지품 <span>{equipmentInventory.items.length}종</span></summary>
-              <InventorySummary evaluation={equipmentInventory} equipment={EQUIPMENT} properties={EQUIPMENT_PROPERTIES} />
-            </details>
-
-            <details className="sheet-disclosure" open>
-              <summary>기술 레벨 <span>{SKILLS.filter((skill) => skillAllocation.states[skill.id]!.level >= 0).length}종 습득</span></summary>
-              <RulesLink topic="skills">기술 레벨 규칙</RulesLink>
-              <table className="skill-table">
-                <caption>생성 시 기술과 성장 점수</caption>
-                <thead><tr><th scope="col">기술</th><th scope="col">레벨</th><th scope="col">성장</th></tr></thead>
-                <tbody>{SKILLS.map((skill) => {
-                  const state = skillAllocation.states[skill.id]!
-                  return <tr key={skill.id} data-skill-id={skill.id} className={state.level === -1 ? 'untrained' : 'trained'}>
-                    <th scope="row">
-                      <span className="skill-name">
-                        {SKILL_ICONS[skill.id] && <span className="material-symbols-outlined skill-icon" aria-hidden="true">{SKILL_ICONS[skill.id]}</span>}
-                        <span className="skill-name-text">{skill.name}<small>{skill.id}</small></span>
-                      </span>
-                    </th>
-                    <td><strong>{state.level}</strong></td>
-                    <td>{state.advancementPoints ? <strong>2레벨을 위한 성장 점수 {state.advancementPoints}점</strong>
-                      : state.allotments ? `${state.allotments}회 배정` : '미숙련'}</td>
-                  </tr>
-                })}</tbody>
-              </table>
-              {skillAllocation.issues.length > 0 && <div className="skill-review" role="status">
-                <strong>기술 선택을 확인하세요</strong>
-                <ul>{skillAllocation.issues.map((issue) => <li key={issue.key}>{ko(issue.message)}</li>)}</ul>
-              </div>}
-            </details>
-
-            <div className="summary-block selected-focus-summary">
-              <p className="subheading">습득한 포커스 <span>선택권 {selectedFocusInstances.length} / {focusLimit}</span></p>
-              {!allFocusInstances.length && <p className="support-text">아직 포커스를 선택하지 않았습니다. <a href="#stage-class">포커스 고르기 →</a></p>}
-              <div className="tag-row">
-                {allFocusInstances.map((instance) => {
-                  return <span key={instance.instanceId} className="tag">{focusInstanceLabel(instance, allFocusInstances, FOCI)}{instance.grantedBy && ` · 자동 습득 (${focusGrantLabel(instance.grantedBy)})`}</span>
-                })}
-              </div>
-            </div>
-            {focusCreation.scoreChanges.length > 0 && <section className="summary-block" aria-label="포커스로 인한 능력치 변화">
-              <h3>포커스로 인한 능력치 변화</h3>
-              <ul>{focusCreation.scoreChanges.map((change) => <li key={`${change.instanceId}-${change.id}`}>{nameFor(change.id)}: {change.before} → {change.after}</li>)}</ul>
-            </section>}
-            {focusCreation.notes.length > 0 && <details className="sheet-disclosure">
-              <summary>포커스 플레이 참고사항 <span>{focusCreation.notes.length}개</span></summary>
-              <ul>{focusCreation.notes.map((note, index) => <li key={`${note.instanceId}-${index}`}>{ko(note.text)}</li>)}</ul>
-            </details>}
-
-            {focusEffort.map((effort) => <section className="summary-block" key={effort.instanceId} aria-label="전통적 교육 분발">
-              <h3>{nameFor(effort.focusId)} · {nameFor(effort.traditionId)}</h3>
-              <p><strong>최대 분발 {effort.maximum}점</strong></p>
-              <RulesLink topic="foci">전통적 교육 규칙</RulesLink>
-            </section>)}
-            {artEvaluation.classes.length > 0 && <div className="summary-block">
-              <p className="subheading">습득한 기교</p>
-              {artEvaluation.classes.map((result) => <div className="learned-spell-summary" key={result.classId}>
-                <h4>{CLASS_BY_ID.get(result.classId)?.name} ({result.learned.length}/{result.required})</h4>
-                {result.source && <p className="support-text">{nameFor(result.source.focusId)}로 습득</p>}
-                <div className="tag-row">{result.learned.map((id) => {
-                  const art = ARTS.find((option) => option.class_id === result.classId && option.id === id)
-                  return <span className="tag bilingual-tag" key={id}>
-                    <span>{art?.name ?? '알 수 없는 기교'}{result.fixed.includes(id) ? ' / 자동 습득' : ''}</span>
-                    {art?.eng_name && <small lang="en">{art.eng_name}</small>}
-                  </span>
-                })}</div>
-                {!result.complete && <p className="warning-text">시작 기교 선택을 확인하세요.</p>}
-              </div>)}
-            </div>}
-
-            {draft.spellChoicesByClassSlot.flat().length > 0 ? (
-              <div className="summary-block">
-                <p className="subheading">습득한 1레벨 주문</p>
-                {draft.spellChoicesByClassSlot.map((ids, slot) => ids.length > 0 && <div key={slot} className="learned-spell-summary">
-                  <h4>{slot + 1}번째 클래스: {CLASS_BY_ID.get(draft.classChoices[slot])?.name} ({ids.length}/2)</h4>
-                  <div className="tag-row">{ids.map((spellId) => {
-                    const spell = SPELL_BY_ID.get(spellId)
-                    return <span key={spellId} className="tag">{spell?.name ?? '알 수 없는 주문'} / 1레벨</span>
-                  })}</div>
-                </div>)}
-              </div>
-            ) : null}
-
-            </div>
-          </section>
+          <CharacterSheet character={draft} catalogues={CHARACTER_DATA}
+            evaluation={evaluation} evaluationCurrent={evaluationCurrent} backendOnline={backendOnline}
+            evaluationError={evaluationError} allocatedScores={allocatedScores} resolvedClassBuild={resolvedClassBuild}
+            displayedArmorClass={displayedArmorClass} displayedSaves={displayedSaves} abilitySelection={abilitySelection}
+            equipmentInventory={equipmentInventory} skillAllocation={skillAllocation} focusCreation={focusCreation}
+            allFocusInstances={allFocusInstances} focusEffort={focusEffort} artEvaluation={artEvaluation} />
         </aside>
       </section>
     </main>

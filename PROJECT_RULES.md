@@ -16,6 +16,7 @@ Character schema is in `CHARACTER_SCHEMA.md`
 - The frontend preview supplies restored editor scores through `frontend/src/characterPreview.ts`. It does not replace server validation. `shared/characterEvaluation.ts` validates submitted attributes and classes afresh, then assembles issues, stage completion and the API response. The response type is inferred from this shared evaluator rather than copied into the frontend.
 - `backend/src/character.ts` loads catalogues and delegates to the shared evaluator. Shared calculation modules must not depend on filesystem access, React, browser storage or frontend imports. They must not mutate drafts or catalogues.
 - Preserve the existing calculation order, class-validity gates, issue ordering, saved-draft migrations and API fields when refactoring. Type declarations alone do not validate incoming JSON; cached skills, grants, scores and derived totals remain non-authoritative.
+- `frontend/src/CharacterSheet.tsx` is a presentation-only component. `App.tsx` owns the draft, local evaluation, server-response freshness and fallback selection, and passes results and display catalogues to the sheet. Do not duplicate rule calculations, draft state, persistence or network requests in the sheet. Preserve its DOM anchors, disclosures and current/pending/offline display behavior during extraction.
 
 ## Registered Reference Sources
 

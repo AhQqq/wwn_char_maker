@@ -147,7 +147,7 @@
     "id": "skinshifter",
     "can_be_full_class": false,
     "name": "변신술사",
-    "eng_name": "Skin Shifter",
+    "eng_name": "Skinshifter",
     "archetype": "mage",
     "spells": false,
     "arts": true,

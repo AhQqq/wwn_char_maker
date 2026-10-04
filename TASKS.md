@@ -31,7 +31,15 @@ Completed checklists are consolidated here; they are not open tasks.
 - Equipment: starting packages or funds, budgeted purchases, saved loadouts, owned equipment selection, AC and worn-armor penalties. Detailed data caveats remain in `EQUIPMENT_DATA_REVIEW.md`.
 - Interface: HP/AC terminology, the image-only game banner, Korean labels with small English names, localized class/archetype selectors, a separate rules page, readable focus details and disabled unavailable choices.
 
-## Latest Verification: 2026-10-04
+## Latest Verification: 2026-10-05
+
+- Extracted the derived sheet from `App.tsx` into the presentation-only `CharacterSheet.tsx`. Shared signed-number formatting lives in `formatting.ts`; draft state, calculations, persistence, network handling, CSS and routing remain unchanged.
+- `npm.cmd test` in `backend`: **264 passed**. New `npm.cmd test` in `frontend`: **6 passed**, covering sheet structure, supplied combat results, pending/offline display, completion status, focus caps/grants and input immutability. The frontend tests render through the existing Vite/React tooling without adding dependencies.
+- Compared **470 complete initial-render HTML outputs** against the committed pre-extraction App using identical current catalogues: all matched. These are initial render comparisons, not 470 browser interaction tests.
+- `npm.cmd run build` in `frontend`: **passed**, including TypeScript checks. Main JS: 803.55 kB minified / 227.47 kB gzip; CSS: 36.01 kB / 7.40 kB gzip. Source separation does not split the bundle; the existing large-chunk warning remains.
+- Browser smoke check at the isolated `http://127.0.0.1:4187/` origin (1280 x 720): saved full Invoker restoration, HP/AC, background growth, arts/Effort/spells, expanded combat details, rules-page round trip preserving the disclosure, and reload passed. Moving a growth grant from DEX to STR changed AC 16 to 15; restoring DEX restored the complete sheet output. No page-level horizontal overflow or captured console warnings/errors. Temporary choices were restored, and the temporary tab/servers were closed. No new mobile or cross-browser pass was performed.
+
+## Previous Verification: 2026-10-04
 
 - `npm.cmd test` in `backend`: **264 passed, 0 failed, 0 skipped** after shared-evaluation extraction (259 before it). The script discovers `src/**/*.test.ts` automatically. Added preview/API parity, adapter response, immutability, raw-input validation and progression-lookup tests.
 - `npm.cmd run build` in `frontend`: **passed**, including TypeScript project checks. Main JS: 802.77 kB minified / 226.45 kB gzip; CSS: 36.01 kB / 7.40 kB gzip. The existing large-chunk warning remains.
