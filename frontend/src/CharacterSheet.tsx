@@ -201,7 +201,8 @@ export function CharacterSheet({
         <p className="subheading">습득한 기교</p>
         {artEvaluation.classes.map((result) => <div className="learned-spell-summary" key={result.classId}>
           <h4>{CLASS_BY_ID.get(result.classId)?.name} ({result.learned.length}/{result.required})</h4>
-          {result.source && <p className="support-text">{nameFor(result.source.focusId)}로 습득</p>}
+          {result.focusGrant && <p className="support-text">{nameFor(result.focusGrant)}로 기교 부여</p>}
+            {result.source && <p className="support-text">{nameFor(result.source.focusId)}로 습득</p>}
           <div className="tag-row">{result.learned.map((id) => {
             const art = ARTS.find((option) => option.class_id === result.classId && option.id === id)
             return <span className="tag bilingual-tag" key={id}>

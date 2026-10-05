@@ -331,9 +331,16 @@ function draftTraditions(draft: Pick<Draft, 'classChoices' | 'focusInstances' | 
   return evaluateFocusTraditions(selection.applied, draft.focusRuleChoices, FOCI, draft.classChoices).grants
 }
 
+function draftAppliedFoci(draft: Pick<Draft, 'classChoices' | 'focusInstances'> & { artChoicesByClass?: unknown }) {
+  if (!evaluateClassChoices(draft.classChoices, CLASSES).complete) return []
+  const classes = draft.classChoices.map((id) => CLASS_BY_ID.get(id)).filter((item): item is ClassData => Boolean(item))
+  return evaluateFocusInstances(draft.focusInstances, undefined, FOCI, classes,
+    focusBudgetForProgression(classProgression(classes)), draftArtFocusGrants(draft).grants).applied
+}
+
 function reconcileMagicChoices(draft: Draft): Draft {
   const traditions = draftTraditions(draft)
-  const artChoicesByClass = normalizeArtChoices(draft.artChoicesByClass, draft.classChoices, CLASSES, STARTING_ARTS, ARTS, traditions)
+  const artChoicesByClass = normalizeArtChoices(draft.artChoicesByClass, draft.classChoices, CLASSES, STARTING_ARTS, ARTS, traditions, draftAppliedFoci(draft))
   const grants = draftArtFocusGrants({ ...draft, artChoicesByClass }).grants
   const focusInstances = refundGrantedFocusPicks(draft.focusInstances, grants)
   return { ...draft,
@@ -372,7 +379,7 @@ function readSavedDraft(): { draft: Draft; spellNotice: string; artNotice: strin
     const restoredSpells = restoreSpellChoices(parsed.spellChoicesByClassSlot, legacySpells,
       classChoices.length > 0 ? classChoices : fallback.classChoices, SPELLS, traditions)
     const restoredArts = restoreArtChoices(parsed.artChoicesByClass,
-      classChoices.length > 0 ? classChoices : fallback.classChoices, CLASSES, STARTING_ARTS, ARTS, traditions)
+      classChoices.length > 0 ? classChoices : fallback.classChoices, CLASSES, STARTING_ARTS, ARTS, traditions, draftAppliedFoci({ classChoices: classChoices.length > 0 ? classChoices : fallback.classChoices, focusInstances, artChoicesByClass: nativeArtChoices }))
     const activeBackground = BACKGROUND_BY_ID.get(background) ?? BACKGROUNDS[0]
     const backgroundRollTables = (parsed.backgroundRollTables ?? fallback.backgroundRollTables)
       .filter((table): table is BackgroundRollTable => table === 'growth' || table === 'learn')
@@ -489,8 +496,8 @@ function App() {
   const fixedClassGrants = classGrants.filter((grant) => grant.kind === 'fixed')
   const classSkillChoices = classGrants.filter((grant) => grant.kind === 'choice')
   const resolvedClassBuild = classBuildName(draft.classChoices, CLASSES, COMBINATIONS)
-  const artPlans = getArtPlans(draft.classChoices, CLASSES, STARTING_ARTS, ARTS, focusTraditions)
-  const artEvaluation = evaluateArtChoices(draft.artChoicesByClass, draft.classChoices, CLASSES, STARTING_ARTS, ARTS, focusTraditions)
+  const artPlans = getArtPlans(draft.classChoices, CLASSES, STARTING_ARTS, ARTS, focusTraditions, focusCreation.applied)
+  const artEvaluation = evaluateArtChoices(draft.artChoicesByClass, draft.classChoices, CLASSES, STARTING_ARTS, ARTS, focusTraditions, focusCreation.applied)
 
   useEffect(() => {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(draft))
@@ -739,7 +746,7 @@ function App() {
   function toggleArt(classId: string, groupKey: string | null, id: string) {
     setArtNotice('')
     setDraft((current) => reconcileMagicChoices({ ...current, artChoicesByClass: toggleArtChoice(current.artChoicesByClass,
-      classId, groupKey, id, current.classChoices, CLASSES, STARTING_ARTS, ARTS, draftTraditions(current)) }))
+      classId, groupKey, id, current.classChoices, CLASSES, STARTING_ARTS, ARTS, draftTraditions(current), draftAppliedFoci(current)) }))
   }
 
   function restoreSavedDraft() {

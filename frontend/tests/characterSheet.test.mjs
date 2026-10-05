@@ -37,7 +37,7 @@ before(async () => {
       allFocusInstances: [...core.focusCreation.instances, ...core.focusCreation.grantedInstances],
       focusEffort: effects.focusEffort,
       artEvaluation: evaluateArtChoices(character.artChoicesByClass, character.classChoices,
-        data.CLASSES, data.STARTING_ARTS, data.ARTS, effects.focusTraditions),
+        data.CLASSES, data.STARTING_ARTS, data.ARTS, effects.focusTraditions, core.focusCreation.applied),
     }
   }
 })
@@ -113,4 +113,14 @@ test('rendering does not mutate character choices, catalogues or evaluated resul
   freeze(props)
   assert.equal(render(props), render(props))
   assert.deepEqual(props, original)
+})
+
+ test('Kitsune Sparks and its focus source appear on the sheet and disappear on removal', () => {
+  const source = { ...makeProps().character, classChoices: ['warrior', 'expert'], focusInstances: [{ instanceId: 'kitsune', focusId: 'kitsune_beastfolk1' }], artChoicesByClass: {} }
+  const props = makeProps(source)
+  const html = render(props)
+  assert.match(html, /원소 촉발 \/ 자동 습득/)
+  assert.match(html, /Elemental Sparks/)
+  assert.match(html, /키츠네 수인.*로 기교 부여/)
+  assert.doesNotMatch(render(makeProps({ ...source, focusInstances: [] })), /Elemental Sparks/)
 })

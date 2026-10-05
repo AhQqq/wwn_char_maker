@@ -366,6 +366,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep with an optional 늪지 여우 수인 qualifier to distinguish it from Kitsune. The two are not interchangeable packages.
 - **Observation:** R: low-light sight lacks an explicit total-darkness exception; speed +10ft does not identify land versus every movement mode. The comparison with Kitsune belongs in flavor, not in inherited mechanical traits.
 - **Revision or ruling:** If intended: “완전한 어둠이 아닌 희미한 빛에서 명확히 볼 수 있습니다. 기본 지상 이동속도가 10ft 증가합니다.” Do not silently generalize the speed increase to flight/swimming, or give this origin Kitsune's art.
+- **Manual Review:** Done.
 
 ### 028 전령 나락종 / Harbinger 那落種
 
@@ -386,6 +387,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep, but reconcile the title 들소 with body text 소 수인 and the group name 후아. “신정 고기” is unclear; ask whether it means ritual meat or a typo rather than assuming 신선한 고기.
 - **Observation:** E: the modifier, encumbrance-only STR, and maximum System Strain adjustments are now separately encoded and aligned with the local effect. Distinguish +4 carrying STR from the +1 STR modifier so readers do not double-apply it to all derived statistics.
 - **Revision or ruling:** “근력 수정치 +1, 민첩 수정치 -1. 하중 한도를 계산할 때만 근력 점수가 4 높은 것으로 취급합니다. 기관계 부담 최대치가 2 증가합니다.” Retain the note that horns have no stated combat benefit.
+- **Manual Review:** Done.
 
 ### 030 키츠네 수인 / Kitsune Beastfolk
 
@@ -396,6 +398,8 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep if differentiated from the separate 여우 수인 origin; an explanatory subtype is preferable to translating both simply as 여우 수인.
 - **Observation:** D: the Elemental Sparks art and replacement art choice are absent from encoded creation effects. The local art exists as elem/elemental_sparks (원소 촉발). R: “이미 알고 있다면” needs a timing rule when Elementalist grants it during creation and a restriction on replacement art level/prerequisites.
 - **Revision or ruling:** “원소 촉발 기교를 얻습니다. 다른 생성 과정에서 이미 원소 촉발을 얻는다면, [자격 조건]을 만족하는 원소술사 기교 1개를 대신 고릅니다.” Confirm access for non-Elementalists and whether the substitute ever grants Effort. Do not require learning a spell or changing class solely to record this art.
+- **Manual Review:** Done.
+
 
 ### 031 지저종 / Deepfolk
 
@@ -406,6 +410,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep.
 - **Observation:** E/R: replace “육체적 능력” with “육체 능력치 점수” and make the optional choice explicit. Sunlight threshold is strictly exceeding maximum System Strain, not reaching it. Clarify eye exposure versus palm-sized skin exposure, protection adequacy, and whether covering a collapsed character merely halts death or also restores consciousness.
 - **Revision or ruling:** “근력·민첩·건강 중 점수가 14 미만인 능력치 1개를 선택하여 점수를 14로 바꿀 수 있습니다. 선택하지 않아도 됩니다.” Preserve the current separate 1d6-minute death window rather than translating it into rounds. Creation's optional score choice is already implemented.
+- **Manual Review:** Done.
 
 ### 032 도마뱀 수인 / English name absent
 
@@ -416,6 +421,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep with a subtype/category qualifier to distinguish it from 리자드맨; their benefits are different.
 - **Observation:** R: “최소 1점까지 모든 충격 피해량을 1 줄일 수” could create 1 damage even when Shock immunity or AC prevented any. The swim speed should reference the character's normal land speed or another defined speed. Holding breath needs to specify whether exertion changes the 15-minute limit.
 - **Revision or ruling:** Conditional reduction wording: “충격 피해를 실제로 받는 경우 그 피해를 1 줄입니다(최소 1). 이 효과는 원래 받지 않을 충격 피해를 발생시키지 않습니다.” Do not import Lizardmen's AC or breath weapon.
+- **Manual Review:** Done.
 
 ### 033 고양이 수인 / English name absent
 
@@ -426,6 +432,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep; no stronger alternative is compelled by the effect.
 - **Observation:** R: dagger-like claws need an associated skill and treatment as armed/unarmed, including interaction with Unarmed Combatant. The nonlethal-compulsion save lacks timing and frequency: each attack, each hit, or each damage event. “실제 전투” needs a boundary for sparring and coercion.
 - **Revision or ruling:** Specify “비살상 피해를 [선언할 때/가하려 할 때] 정신 내성굴림을 합니다. 실패하면 해당 공격의 피해만 살상 피해로 바뀝니다” if only that attack is intended. The low-light wording should explicitly include or exclude complete darkness.
+- **Manual Review:** Done.
 
 ### 034 오니 / Oni
 
@@ -436,6 +443,8 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep as a setting creature name rather than silently equating it with every 도깨비 tradition.
 - **Observation:** D: the +4 encumbrance STR remains absent from derived metadata. The unconditional -2 Mental-save penalty is now encoded separately from WIS -1 (2026-10-04 implementation, not test-verified). The current description uses 백병. Clarify that the +4 is not an actual score increase.
 - **Revision or ruling:** “하중 계산에만 근력 점수 +4를 적용합니다. 모든 정신 내성굴림 결과에 -2 페널티를 받습니다.” The latter corresponds to raising the displayed Mental target by 2, unlike Laborer's conditional mind-affecting penalty.
+- **Manual Review:** Done.
+
 
 ### 035 쥐 수인 / English name absent
 
@@ -446,6 +455,8 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep.
 - **Observation:** R: “10ft 밖에 있는 물건” literally means objects outside ten feet and provides no upper range. This could reverse the likely intended short-range alternate sense, but the desired range cannot be established externally in this audit.
 - **Revision or ruling:** If a ten-foot radius is intended: “완전한 어둠 속에 있거나 눈이 멀어도 10ft 이내의 물체와는 볼 수 있는 것처럼 상호작용할 수 있습니다.” Confirm inside versus outside before changing. Define whether it permits targeting creatures and detecting invisible things, not merely handling objects.
+- **Manual Review:** Done.
+
 
 ### 036 늑대 수인 / English name absent
 
@@ -456,6 +467,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep.
 - **Observation:** R: the grant of a Main action needs an execution time and whether it interrupts turn order. The giver and each recipient both have per-scene limits; neither should erase the other. Clarify whether self-targeting, ranged attacks, or nonspell supernatural abilities qualify as physical actions.
 - **Revision or ruling:** “장면당 한 번, 이동 행동을 사용해 근접 사거리의 아군 1명에게 [즉시/정해진 시점에] 주요 행동 1회를 부여합니다. 각 아군은 이 효과를 장면당 한 번만 받을 수 있습니다.” Preserve the explicit bans on spellcasting and magic-item use.
+- **Manual Review:** Done.
 
 ### 037 묵도 언데드 / 默都 Undead
 
@@ -466,6 +478,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep; consider placing 默都 beside the Korean setting name rather than inside englishName.
 - **Observation:** R: undead identity with an exception for “일반적인 사령술사 주문” leaves the eligible spell list and beneficial/hostile scope undefined. Automatic stabilization is not immediate recovery at 0 HP. The eight-hour-rest rule lists HP, spell use, and Effort but omits System Strain recovery.
 - **Revision or ruling:** Separate identity, ordinary healing, spell-target exceptions, and recovery. List local spell IDs or a precise scope for the necromancy exception. State that centuries-later return is narrative, not a promise of immediate player-character recovery.
+- **Manual Review:** Done.
 
 ### 038 돼지 수인 / English name absent
 
@@ -476,6 +489,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep.
 - **Observation:** R: “한 라운드 행동” may grant a whole new turn or allow activity until a specified time despite 0 HP. Define further damage, healing during that interval, and the ending condition. Flavor's indiscriminate rage does not appear as a mandatory control-loss rule.
 - **Revision or ruling:** Name the exact end point, such as “[다음 자기 턴 종료]까지” only after approval. Preserve that this time counts against stabilization and that catastrophic destruction prevents the benefit. Do not invent an involuntary berserk check from desc.
+- **Manual Review:** Done.
 
 ### 039 타누키 수인 / Tanuki Beastfolk
 
@@ -486,6 +500,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep if paired with Kitsune/Usagi naming; 너구리 수인 is an optional localization, not a required correction.
 - **Observation:** E/R: the spell title differs from local 시뮬라크럼 가면을 취하라 (adopt_the_simulacular_visage). Its copied effects must be reconciled with self-only use, no language benefit, and 2 hours per character level; the ordinary spell targets multiple willing beings and lasts until dawn. “탈 수 있는” is unclear climbing terminology.
 - **Revision or ruling:** Use “오를 수 있는 표면” and a stable spell reference. Explicitly enumerate self-only, language excluded, and replacement duration. State whether clothing changes and dismissal/reversion are inherited. Referencing a level-3 spell does not mean the creator should show it as a learned level-1 spell.
+- **Manual Review:** Done.
 
 ### 040 텐구 / Tengu
 
@@ -496,6 +511,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep.
 - **Observation:** R: “일반 하중” is not a numeric boundary; 30ft needs a per-move interpretation. An absolute indoor ban differs from Accipiter's large-room exception. “다른 복잡한 행동” needs examples and a rule for landing before attacking. Long-distance exhaustion has no duration limit.
 - **Revision or ruling:** Define carrying limit and takeoff/maintenance/landing actions. Preserve the explicit prohibition on fighting in flight unless you deliberately revise it. Do not borrow the other flying origin's capacities or exceptions merely because both have wings.
+- **Manual Review:** Done.
 
 ### 041 우사기 수인 / Usagi Beastfolk
 
@@ -506,6 +522,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep for setting consistency, or 토끼 수인 if all animal names are localized consistently.
 - **Observation:** R: the once-per-scene speed doubling has no duration, allowing anything from one move to the entire scene. The weekly automatic Luck save needs a before/after-failure decision window and whether using it counts as rolling. D: saves are encoded, while the sheet note preserves but does not resolve the missing speed duration.
 - **Revision or ruling:** “장면당 한 번, 간단 행동으로 기본 지상 이동속도를 [자기 턴 종료/라운드 종료/장면 종료 중 확정]까지 두 배로 합니다.” State whether the bonus doubles only base speed or also other flat increases.
+- **Manual Review:** Done.
 
 ### 042 자각인 / 自刻人
 
@@ -528,6 +545,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep; 자동인형 is an optional gloss if appropriate to the setting's machines, not necessarily all constructs.
 - **Observation:** R: “오토마톤의 성질” invokes an absent complete trait list. An ordinary reader cannot determine sleep, poison/disease, recovery, or repair rules from this entry. The reference to acquiring System Strain from healing should not imply special immunity to all other sources.
 - **Revision or ruling:** Add a local reference or concise list of the exact automaton traits. Keep the mandatory -1 chosen modifier, minimum -2, separate from those traits. Do not infer missing immunities from the English name alone.
+- **Manual Review:** Done.
 
 ### 044 소유품 포병종 / Chattel 抱病種
 
@@ -558,6 +576,8 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep.
 - **Observation:** E/R: the encoded modifier changes now agree. “절반의 휴식” can be read as halving every recovery period, not just sleep; define affected recovery systems. Its Mental-save penalty is conditional on mind-affecting effects, unlike several other origins' unconditional penalties. As of 2026-10-04 it has structured conditional save metadata and a separately labelled sheet source, not an ordinary-target adjustment; tests were not run.
 - **Revision or ruling:** “정신에 영향을 미치는 효과에 대항하는 정신 내성굴림 결과에 -2 페널티” is clearer. Enumerate whether halved rest changes spell, Effort, HP, or System Strain recovery. Do not shorten that condition to “정신 내성 -2” on the sheet.
+- **Manual Review:** Done.
+
 
 ### 047 죄인 포병종 / Penal 抱病種
 
@@ -568,6 +588,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Consider 형벌 포병종 to emphasize imposed punishment rather than an assertion of moral guilt; current name remains a stylistic choice.
 - **Observation:** E: “오직 하나만 13점을 초과” might imply exactly one must exceed 13. The implemented rule permits at most one. “나머지들을 13까지” must not raise scores below 13. Extra foci means two additional picks, not two free fully upgraded families.
 - **Revision or ruling:** “13을 초과하는 능력치 점수는 최대 하나만 유지할 수 있습니다. 둘 이상이면 하나를 고르고, 나머지 초과 점수만 13으로 낮춥니다.” State that the two extra picks do not waive prerequisites or the one-origin-family rule, and that this focus itself costs one pick. Replace the awkward “모든 꺾을 수 없는 의지를” clause with clear flavor plus all-save +2.
+- **Manual Review:** Done.
 
 ### 048 전쟁광 포병종 / Warlike 抱病種
 
@@ -578,6 +599,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Optional 전투형 포병종 or 호전적 포병종; 전쟁광 implies a stronger psychological characterization than the English adjective, though the local flavor supports violent impulses.
 - **Observation:** E/R: current bonus data matches the approved skill/modifier choices and static attack bonus. 접전 should be 백병. “자연적인” +1 could imply a special stacking category that is otherwise undefined; intimidation's social exception needs to be tied to the purpose of the check, not simply the skill used.
 - **Revision or ruling:** “모든 명중굴림에 +1 보너스 ... 서로 다른 지능·지혜·매력 두 개의 수정치 -1 ... 근력·민첩·건강 중 하나의 수정치 +1.” Retain the separate minimum -2 and maximum +3 bounds. Avoid making the flavor compulsion a mandatory berserk rule.
+- **Manual Review:** Done.
 
 ### 049 대형 나락종 / Greater 那落種
 
@@ -588,6 +610,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** R/N: Greater could indicate rank/power, not literal size. 대형 may cause size, reach, or equipment rulings unsupported by the effect. Consider 상위 나락종 only if your setting confirms that meaning.
 - **Observation:** E: current six bonuses agree with the local text. The title and flavor do not grant a larger game size, reach, extra HP, or unlisted natural weapons. Baseline bounds -2/+2 are already global rather than an exception.
 - **Revision or ruling:** If 대형 is retained without size mechanics, add “이 명칭만으로 별도의 크기·사거리 보너스를 얻지는 않습니다.” Replace 접전 with 백병 and preserve Punch and Stab as two separate fixed allotments.
+- **Manual Review:** Done.
 
 ### 050 소형 나락종 / Lesser 那落種
 
@@ -598,6 +621,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Like Greater, confirm whether 소형 describes actual size or relative rank; 하위 나락종 is only a conditional candidate.
 - **Observation:** E: encoded Sneak, Stab, DEX +1 and CON -1 match. No weapon-size restriction is stated, unlike Halflings; the title alone must not import it. “인간에 가깝거나 인도적인” should distinguish appearance from humane behavior.
 - **Revision or ruling:** State any actual size restriction explicitly if intended; otherwise retain normal equipment rules. Use “백병과 잠행” for the skill grants. Clarify the flavor comparison without changing the mechanical package.
+- **Manual Review:** Done.
 
 ### 051 노역종 / 奴役種
 
@@ -608,6 +632,8 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep with hanja; distinguish the proper origin from Laborer rather than treating both as 노동자.
 - **Observation:** D: Exert and four modifier adjustments are encoded. The additional unconditional -2 Mental-save penalty was added separately on 2026-10-04; INT/CHA penalties alone are not that penalty. Tests were not run. R/E: “잔혹함에 더 유능” is unclear characterization, not an executable rule.
 - **Revision or ruling:** “모든 정신 내성굴림 결과에 -2 페널티를 받습니다.” On the current target-number sheet that requires an additional +2 to the target after modifiers. Keep this separate from the origin's CHA penalty and from Laborer's conditional penalty.
+- **Manual Review:** Done.
+
 
 ### 052 반인종 / 半人種; Halfmen
 
@@ -618,6 +644,8 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep with the hanja/English alias if deliberate; 반인종 can otherwise be parsed as an unrelated anti-race expression. 반인 is a possible shorter display name, not a mandated setting change.
 - **Observation:** D: Survive and CON +1 are encoded. On 2026-10-04 the translator confirmed that Mental -2 is unconditional for this character; it is now encoded separately, without a proximity switch. Tests were not run. R: “어떤 식물도 소화” does not clearly grant immunity to poison or nutritional sufficiency, and “극한의 추위와 더위” needs boundaries distinguishing weather from damage.
 - **Revision or ruling:** List whether the trait concerns environmental exposure only, excluding fire/frost attacks unless explicitly intended. Clarify that digestibility does not necessarily mean toxin immunity. Render the independent Mental penalty with the correct die/target sign.
+- **Manual Review:** Done.
+
 
 ### 053 예속종 / 隷屬種
 
@@ -628,6 +656,8 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep; trim trailing whitespace and place hanja in a dedicated alias field if the schema later supports it.
 - **Observation:** D: Convince, Perform and CHA +1 are encoded. The stated -2 to all Mental saves was encoded separately on 2026-10-04; tests were not run. Although the explanation mentions susceptibility to mental influence, the operative sentence says all Mental saves, unlike Laborer.
 - **Revision or ruling:** The implementation follows the existing operative sentence, without narrowing it from flavor: “모든 정신 내성굴림 결과에 -2 페널티를 받습니다.” Change the condition explicitly if a narrower rule is intended.
+- **Manual Review:** Done.
+
 
 ## Other World Origins
 
@@ -640,6 +670,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep with an explicit category or setting qualifier; the other Dwarves focus has different traits and a Level 2.
 - **Observation:** E: Craft, CON +1, and DEX/CHA -1 agree with the prose. Darkvision has a clear 60ft range. The main risk is confusing this package with dwarves_21 and inheriting its HP, magic resistance, or upgrade.
 - **Revision or ruling:** Display “드워프 (다른 세계)” or a translator-chosen setting label. Keep this entry's traits self-contained. An origin-family link must use IDs, not identical translated names.
+- **Manual Review:** Done.
 
 ### 055 엘프, 문명 / Elves, Civilized
 
@@ -650,6 +681,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Suggested 문명 엘프 or 도시 엘프; the latter fits the local flavor but narrows the English title, so use it only intentionally.
 - **Observation:** E: both fixed skills, DEX/INT choice, and CON penalty now match. The darkvision clause explicitly excludes complete darkness; do not merge it with dwarven darkvision. 마법 as a skill does not by itself grant spellcasting or Effort.
 - **Revision or ruling:** “지식과 마법을 각각 보너스 기술로 얻습니다. 민첩 또는 지능 수정치 중 하나를 +1, 건강 수정치를 -1 조정합니다.” Name all choices separately and keep this origin distinct from reincarnating elves1.
+- **Manual Review:** Done.
 
 ### 056 엘프, 하프 엘프 / Elves, Half-Elves
 
@@ -660,6 +692,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Suggested 하프엘프 as a standalone name; keep the hierarchical prefix only if every subrace is displayed that way.
 - **Observation:** E/R: the optional DEX/CON pair is correctly encoded atomically. The text should explicitly bind the penalty to opting in and state selection permanence. The free skill currently permits Connect again; confirm whether “원하는 기술” intentionally includes the separately granted one.
 - **Revision or ruling:** “원한다면 민첩 수정치 +1과 건강 수정치 -1을 함께 적용할 수 있습니다. 적용하지 않으면 둘 다 변하지 않습니다.” Preserve the 30ft dim-light limit. If Connect may be chosen again, say so and reference the creation allotment cap.
+- **Manual Review:** Done.
 
 ### 057 엘프, 숲 / Elves, Forest
 
@@ -670,6 +703,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Suggested 숲 엘프 for natural Korean word order.
 - **Observation:** E: encoded Shoot, Survive, DEX +1 and CON -1 match. “완전한 어둠보다 빛이 있으면” is awkward but appears to mean any illumination short of total darkness, not a distance-based darkvision power.
 - **Revision or ruling:** “완전한 어둠이 아니라면 희미한 빛에서도 명확히 볼 수 있습니다.” Do not invent a vision range or add the other elf variants' skills and score rules.
+- **Manual Review:** Done.
 
 ### 058 하플링 / Halflings
 
@@ -680,6 +714,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep; trim trailing whitespace.
 - **Observation:** R: “효과적으로 쓰기에 너무 작습니다” does not say prohibited, penalized, or requiring special-sized equipment. Define which bows count as large and whether thrown two-handed melee weapons are affected. Sneak and the CON/DEX modifier choice agree with data.
 - **Revision or ruling:** Choose “사용할 수 없습니다” versus a specified penalty rather than leaving a vague ineffectiveness rule. List weapon IDs/categories or a size criterion. This exact rule is inherited by both Goblin variants, so resolve it centrally.
+- **Manual Review:** Done.
 
 ### 059 노움 / Gnomes
 
@@ -700,6 +735,8 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Suggested 발명가 고블린 or 땜장이 고블린; 발명가 emphasizes invention, 땜장이 emphasizes tinkering. Either needs stylistic approval.
 - **Observation:** D/R: effect says “지혜 수정치는 -1이 됩니다” (set to -1); data subtracts 1 from the modifier. A starting +1 therefore becomes -1 by prose versus 0 in the code. This is a concrete mismatch, not merely polish. Weapon restrictions depend on Halfling wording.
 - **Revision or ruling:** If subtraction is intended: “지혜 수정치가 1 감소합니다.” If assignment is intended: “기존 값과 관계없이 지혜 수정치를 -1로 설정합니다.” Define order with other modifiers before encoding an assignment. Trim title whitespace.
+- **Manual Review:** Done.
+
 
 ### 061 고블린, 야만 / Goblins, Savage
 
@@ -710,6 +747,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Suggested 야만 고블린; 부족 고블린 is a softer thematic alternative but changes emphasis and is not intrinsically more faithful.
 - **Observation:** E/R: “늪지도” appears to be a typo for 늪지 or 늪지대. The skill/modifier data agrees. Halfling weapon limits are only referenced, so an isolated card is incomplete without a linked definition.
 - **Revision or ruling:** Keep Sneak and Survive as separate grants. Repeat or link the precise weapon restriction after resolving Halflings. Darkness up to 60ft is explicit and should not be converted into the elves' dim-light-only rule.
+- **Manual Review:** Done.
 
 ### 062 리자드맨 / Lizardmen
 
@@ -720,6 +758,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep to distinguish it from 도마뱀 수인, or use a translator-approved variant qualifier. Trim whitespace on both levels.
 - **Observation:** D/R: Level 1's unarmored AC 13 and armor +1 are absent from current derived AC; “비무장” can mean weaponless rather than unarmored. Clarify whether DEX/shields add and whether CHA may be both bonus and penalty (current separate choices permit it). Level 2 lacks action cost, save type, successful-save damage, and how/when breath damage type is selected.
 - **Revision or ruling:** Use “갑옷을 입지 않았을 때” if that is the intent, and publish the AC formula. For breath specify “장면당 한 번, [행동] ... [내성] 실패 시 2d6 + 캐릭터 레벨, 성공 시 [확정]”. State whether immunity covers the chosen damage type broadly or only the user's own breath.
+- **Manual Review:** Done.
 
 ### 063 오크 / Orcs
 
@@ -730,6 +769,8 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Name:** Keep; trim trailing whitespace.
 - **Observation:** E: “생존과 접전 혹은 격투” lacks grouping, but the current data clearly uses Survive plus one of Stab/Punch. STR/CON +1 and INT -1 match. The flavor's generalization is not an extra compulsory intelligence restriction beyond the modifier.
 - **Revision or ruling:** “생존을 보너스 기술로 얻고, 백병 또는 격투 중 하나를 추가 보너스 기술로 선택합니다.” This removes the alternative reading of either (Survive and Stab) or Punch alone. Preserve the separate 60ft darkvision.
+- **Manual Review:** Done.
+
 
 ## Other Demihuman Origins
 
@@ -743,6 +784,7 @@ The following 102 review items cover 153 catalogue entries exactly once on their
 - **Implementation follow-up (2026-10-04):** The +2 to saves against hostile magical effects now has structured condition/source metadata. It is excluded from ordinary target totals; overlapping conditional bonuses are not automatically stacked. Tests were not run. The HP/HD issue below remains deferred.
 - **Observation:** D/R: Level 1 says “각 레벨마다 HD에 +1”; this can mean additional hit dice, hit-die result bonus, or HP per character level. Current HP does not include any such effect. Spatial sense “20ft까지 단단한 물체” needs to distinguish sensing solid objects from seeing through solid barriers. Level 2's paid 100ft option may or may not share the daily use.
 - **Revision or ruling:** Resolve and write either “레벨당 최대 HP +1” or the intended dice expression, not bare HD +1. For Level 2 say whether the user negates only personal effects or cancels the effect for everyone; define the once-per-day limit, Strain cost, targeting, and persistence separately. 기관계 부하 should match the approved resource term.
+- **Manual Review:** Done.
 
 ### 065 엘프 / Elves, reincarnating variant
 

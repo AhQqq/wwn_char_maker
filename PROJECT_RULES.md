@@ -550,3 +550,9 @@ A character is valid if:
 - Each spellcasting class slot (`invoker`, `elem`, `necro`, or `high`) has exactly two learned spells selected in the final stage; non-spellcasting slots have none.
 - Every learned spell ID exists in `frontend/data/spells.json`, has spell level 1, is selected only once across both slots, and belongs to a school allowed for the slot whose allowance it uses. Higher-level spells must not appear in the creation catalogue.
 - High Magic is available to all four spellcasters; Elementalist and Necromancer magic are restricted to `elem` and `necro` slots respectively. These spell-selection checks are enforced by both the frontend and backend.
+
+## Kitsune Beastfolk Starting Art
+
+An applied, funded `kitsune_beastfolk1` focus grants `elem` / `elemental_sparks` automatically, including to characters without an arts class. If an Elementalist class or Traditional Education already grants it as a fixed art, increase that Elementalist plan's additional-art allowance by one instead. Never learn the fixed art twice or use it to fill the replacement pick. This does not grant Elementalist class status, other fixed arts, spells or an Effort pool.
+
+`shared/artSelection.ts` receives validated applied focus instances from the creation evaluator. The existing `artChoicesByClass.elem` storage holds replacement choices; fixed grants and counts are reconstructed, never trusted from saved/API fields. Removing the focus removes a standalone grant or trims the additional allowance, retaining earlier valid class picks. Restoration revalidates choices against the current class, tradition and focus. The picker and sheet identify the focus source.

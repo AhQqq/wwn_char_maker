@@ -58,21 +58,22 @@ export function ArtPicker({ plans, choices, notice, onToggle }: Props) {
       const required = plan.groups.reduce((sum, group) => sum + group.choose, plan.choose)
       return <section className="spell-class-slot" key={plan.classId} data-art-class={plan.classId}
         aria-label={`${nameFor(plan.classId)} 기교`}>
-        <div className="focus-category-header"><h3>{nameFor(plan.classId)}{plan.source ? ' 기교' : ` / ${plan.mode === 'full' ? '순수 클래스' : '부분 클래스'}`}</h3>
+        <div className="focus-category-header"><h3>{nameFor(plan.classId)}{plan.source || plan.focusGrant ? ' 기교' : ` / ${plan.mode === 'full' ? '순수 클래스' : '부분 클래스'}`}</h3>
           {plan.configured && <span role="status">자동 습득 {plan.fixed.length}개 / {picked}/{required}개 선택</span>}
         </div>
+        {plan.focusGrant && <p className="support-text">{nameFor(plan.focusGrant)} · 원소 촉발 자동 습득. 이미 습득했다면 원소술사 기교 1개 추가 선택.</p>}
         {plan.source && <p className="support-text">{nameFor(plan.source.focusId)} · {plan.mode === 'full' ? '순수' : '부분'} 소언사 기준</p>}
         {!plan.configured ? <div className="skill-review" role="status">
           <strong>클래스 기교 선택 불가</strong>
           <ul>{plan.issues.map((issue, index) => <li key={index}>{ko(issue)}</li>)}</ul>
         </div> : <>
           {plan.fixed.length > 0 && <section className="art-choice-section" aria-label={`${nameFor(plan.classId)}: 자동 습득 기교`}>
-            <h4>{plan.source ? '포커스로 자동 습득' : '클래스에서 자동 습득'}</h4>
+            <h4>{plan.source || (plan.focusGrant && plan.choose === 0) ? '포커스로 자동 습득' : '클래스에서 자동 습득'}</h4>
             <div className="focus-grid">{plan.fixed.map((id) => {
               const art = plan.options.find((option) => option.id === id)!
               return <article key={id} className="spell-option art-option is-granted" data-art-id={id}>
                 <h5>{art.name}</h5><p className="focus-english-name">{art.eng_name}</p>
-                <span className="focus-state-badge">{plan.source ? '포커스로 자동 습득' : '클래스에서 자동 습득'} / 해제 불가</span>
+                <span className="focus-state-badge">{plan.source || (plan.focusGrant && plan.choose === 0) ? '포커스로 자동 습득' : '클래스에서 자동 습득'} / 해제 불가</span>
                 <ArtDescription art={art} />
               </article>
             })}</div>

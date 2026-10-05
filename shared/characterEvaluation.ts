@@ -30,7 +30,7 @@ export function evaluateCharacterWithData(draft: CharacterInput, data: Character
   const selectedSkills = Object.values(skillAllocation.states).filter((skill) => skill.allotments > 0).map((skill) => skill.id);
   const skillGrantCounts = Object.fromEntries(Object.values(skillAllocation.states).map((skill) => [skill.id, skill.allotments]));
   const skillScopeComplete = (scope: string) => !skillAllocation.issues.some((issue) => issue.scope === scope);
-  const artEvaluation = evaluateArtChoices(draft.artChoicesByClass, classEvaluation.ids, CLASSES, STARTING_ARTS, ARTS, focusTraditions);
+  const artEvaluation = evaluateArtChoices(draft.artChoicesByClass, classEvaluation.ids, CLASSES, STARTING_ARTS, ARTS, focusTraditions, focusCreation.applied);
   const spellEvaluation = evaluateSpellChoices(draft.spellChoicesByClassSlot, classEvaluation.ids, SPELLS, draft.spellChoices, focusTraditions);
 
   // Preserve API issue ordering and the existing per-source deduplication policy.
