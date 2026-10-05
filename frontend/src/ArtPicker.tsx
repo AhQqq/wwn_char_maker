@@ -14,6 +14,8 @@ function ArtDescription({ art }: { art: ArtOption }) {
   return <details className="spell-description">
     <summary>전체 설명 읽기</summary>
     <p>{rulesText(art.description) || '등록된 설명이 없습니다.'}</p>
+    {art.minimum_hit_dice && <p>생성 시 HD 최솟값 {art.minimum_hit_dice}을 적용합니다.</p>}
+    {art.unarmored_base_ac !== undefined && <p>갑옷·방패가 없으면 기본 AC {art.unarmored_base_ac}. 다른 기본 AC와 높은 값을 사용한 뒤 민첩 수정치를 더합니다.</p>}
     {Boolean(art.focus_grants?.length) && <p className="support-text">생성 시 자동 습득: {art.focus_grants!.map(nameFor).join(', ')} 1레벨.
       선택권을 소모하지 않으며 중복 선택권은 반환합니다. 2레벨 상승과 다른 포커스로의 대체는 이 생성기에서 적용하지 않습니다.</p>}
   </details>
@@ -47,7 +49,7 @@ export function ArtPicker({ plans, choices, notice, onToggle }: Props) {
 
   return <section className="card art-selection creation-section" id="stage-arts" aria-labelledby="art-selection-title">
     <div className="card-header">
-      <div><p className="step-label">06 / 몸에 익힌 기교</p><h2 id="art-selection-title">기교 선택</h2></div>
+      <div><h2 id="art-selection-title">기교 선택</h2></div>
       <RulesLink topic="arts" />
     </div>
     {notice && <p className="spell-notice" role="status">{ko(notice)}</p>}
@@ -87,7 +89,7 @@ export function ArtPicker({ plans, choices, notice, onToggle }: Props) {
           </div>)}
           {plan.choose > 0 && choiceSection(plan, current, null, '추가 기교', plan.choose,
             plan.options.filter((art) => !plan.fixed.includes(art.id)))}
-          {required === 0 && <p className="support-text">시작 기교를 모두 자동으로 습득하므로 추가 선택이 필요하지 않습니다.</p>}
+          {required === 0 && <p className="support-text">모두 자동 습득</p>}
         </>}
       </section>
     })}

@@ -167,7 +167,12 @@
     "archetype": "mage",
     "spells": false,
     "arts": true,
-    "bonus": [],
+    "bonus": [
+      {
+        "id": "heal",
+        "action": "fixed_skill"
+      }
+    ],
     "art_prog": []
   },
   {
@@ -180,8 +185,13 @@
     "arts": true,
     "bonus": [
       {
-        "id": "heal",
-        "action": "fixed_skill"
+        "action": "choice_skill",
+        "count": 1,
+        "exclude": {
+          "ids": [
+            "stab", "punch", "shoot"
+          ]
+        } 
       }
     ],
     "art_prog": []

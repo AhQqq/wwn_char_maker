@@ -9,7 +9,7 @@ import { focusCreationLevelReason, modifierLimitText } from '../../shared/focusB
 import { abilityById } from '../../shared/abilities'
 import type { AbilityDefinition } from '../../shared/abilities'
 import type { FocusInstance } from '../../shared/focusCreation'
-import type { ArtFocusGrant } from '../../shared/artFocusGrants'
+import type { FocusGrant } from '../../shared/artFocusGrants'
 import { compatibleFocusAllowances } from '../../shared/focusAllowances'
 import type { FocusAllowance } from '../../shared/focusAllowances'
 
@@ -20,7 +20,7 @@ type Props = {
   selectedClasses: FocusClass[]
   selectedIds: string[]
   instances: FocusInstance[]
-  grants?: ArtFocusGrant[]
+  grants?: FocusGrant[]
   budget: FocusAllowance[]
   limit: number
   skills: NamedOption[]
@@ -68,7 +68,7 @@ function bonusDescription(bonus: FocusBonus, skills: NamedOption[], attributes: 
 
 function LevelAction({ focus, context, location }: { focus: FocusOption; context: Props; location: string }) {
   const { selectedIds, instances, budget, foci, selectedClasses, classes, onToggle, grants = [] } = context
-  const grant = grants.find((item) => item.focusId === focus.id)
+  const grant = grants.find((item) => item.focusId === focus.id && !focus.repeatable)
   const selected = selectedIds.includes(focus.id)
   const reasons = focusInstanceLockReasons(focus, instances, foci, selectedClasses, classes, budget, grants)
   const repeatRoot = focus.repeatable && focus.level === 1
@@ -76,6 +76,9 @@ function LevelAction({ focus, context, location }: { focus: FocusOption; context
   const dependents = selected ? dependentFocusIds(focus.id, selectedIds, foci) : []
   const noteId = `${location}-${focus.id}-status`
   const label = grant ? `${focus.level}레벨 자동 습득` : repeatRoot && selected ? '1레벨 하나 더 선택' : selected ? `${focus.level}레벨${dependents.length ? ' 및 상위 레벨' : ''} 해제` : `${focus.level}레벨 ${levelReason ? '선택 불가' : '선택'}`
+  if (selected && !repeatRoot && !grant) return <div className="focus-level-action">
+    <p className="focus-level-status"><span className="material-symbols-outlined ui-icon" aria-hidden="true">check</span>{focus.level}레벨 선택됨</p>
+  </div>
   return (
     <div className="focus-level-action">
       <button type="button" className={selected || grant ? 'focus-level-button selected' : 'focus-level-button'}
@@ -83,7 +86,7 @@ function LevelAction({ focus, context, location }: { focus: FocusOption; context
         aria-describedby={noteId} onClick={() => onToggle(focus.id)}>
         {label}
       </button>
-      <span id={noteId} className="focus-level-status">
+      <span id={noteId} className={location === 'card' ? 'sr-only' : 'focus-level-status'}>
         {grant ? `${focusGrantLabel(grant.grantedBy)} · 선택권 소모 없음 / 개별 해제 불가` : levelReason ? `${ko(levelReason)}${selected ? ' 저장된 선택을 해제하세요.' : ''}` : reasons.length && (!selected || repeatRoot) ? `선택 불가: ${reasons.map(ko).join(' ')}` : selected ? repeatRoot ? '반복 선택 가능. 추가로 선택할 때마다 선택권 하나를 사용합니다.' : '선택됨' : '선택 가능: 포커스 선택권 하나를 사용합니다.'}
         {dependents.length > 0 && <span className="focus-removal-warning">해제 시 다음 포커스도 함께 해제됩니다: {dependents.map((id) => {
           const dependent = foci.find((item) => item.id === id)!
@@ -102,7 +105,7 @@ export function FocusPicker(props: Props) {
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [selectedOnly, setSelectedOnly] = useState(false)
-  const [visibleCount, setVisibleCount] = useState(12)
+  const [visibleCount, setVisibleCount] = useState(6)
   const deferredSearch = useDeferredValue(search)
   const needle = deferredSearch.trim().toLocaleLowerCase()
   const families = buildFocusFamilies(foci).sort((a, b) => Number(b.category === '기본') - Number(a.category === '기본'))
@@ -146,10 +149,10 @@ export function FocusPicker(props: Props) {
         <div className="catalogue-search" role="search" aria-label="포커스 찾기">
           <label><span>이름이나 효과 검색</span>
             <input type="search" value={search} placeholder="예: 특성화, 전투, Specialist"
-              onChange={(event) => { setSearch(event.target.value); setVisibleCount(12) }} />
+              onChange={(event) => { setSearch(event.target.value); setVisibleCount(6) }} />
           </label>
           <label><span>포커스 분류</span>
-            <select value={categoryFilter} onChange={(event) => { setCategoryFilter(event.target.value); setVisibleCount(12) }}>
+            <select value={categoryFilter} onChange={(event) => { setCategoryFilter(event.target.value); setVisibleCount(6) }}>
               <option value="all">전체 분류</option>
               {categories.map((category) => <option key={category} value={category}>{category}</option>)}
             </select>
@@ -157,12 +160,12 @@ export function FocusPicker(props: Props) {
         </div>
         <div className="catalogue-toolbar-bottom">
           <button type="button" className="filter-toggle" aria-pressed={selectedOnly}
-            onClick={() => { setSelectedOnly(!selectedOnly); setVisibleCount(12) }}>선택한 포커스만</button>
+            onClick={() => { setSelectedOnly(!selectedOnly); setVisibleCount(6) }}>선택한 포커스만</button>
           <span className="support-text" role="status" aria-live="polite">
             {search !== deferredSearch ? '검색 중' : matching.length + '종 중 ' + visible.length + '종 표시'}
           </span>
           {(search || categoryFilter !== 'all' || selectedOnly) && <button type="button" className="text-button"
-            onClick={() => { setSearch(''); setCategoryFilter('all'); setSelectedOnly(false); setVisibleCount(12) }}>필터 초기화</button>}
+            onClick={() => { setSearch(''); setCategoryFilter('all'); setSelectedOnly(false); setVisibleCount(6) }} title="필터 초기화" aria-label="필터 초기화"><span className="material-symbols-outlined ui-icon" aria-hidden="true">filter_alt_off</span></button>}
         </div>
         <p className="support-text">선택 불가 항목도 설명을 읽을 수 있습니다.</p>
       </div>
@@ -179,6 +182,15 @@ export function FocusPicker(props: Props) {
                 const first = family.levels[0]!
                 const selectedLevels = family.levels.filter((focus) => learnedIds.includes(focus.id))
                 const autoGranted = family.levels.some((focus) => grants.some((grant) => grant.focusId === focus.id))
+                const statusNotes = family.levels.map((focus) => {
+                  const grant = grants.find((item) => item.focusId === focus.id && !focus.repeatable)
+                  const selected = learnedIds.includes(focus.id)
+                  const reasons = focusInstanceLockReasons(focus, instances, foci, selectedClasses, classes, budget, grants)
+                  const state = grant ? `자동 습득 (${focusGrantLabel(grant.grantedBy)}) · 선택권 소모 없음`
+                    : selected ? '선택됨' : reasons.length ? '선택 불가' : '선택 가능'
+                  return `${focus.level}레벨: ${state}${!grant && reasons.length ? '\n' + reasons.map(ko).join('\n') : ''}`
+                }).join('\n\n')
+                const statusId = `focus-card-status-${family.id}`
                 const locked = selectedLevels.length === 0 && family.levels.every((focus) =>
                   focusInstanceLockReasons(focus, instances, foci, selectedClasses, classes, budget, grants).length > 0)
                 return (
@@ -187,7 +199,12 @@ export function FocusPicker(props: Props) {
                     aria-label={`${focusName(first)} (${category})`}>
                     <div className="focus-family-heading">
                       <h4>{first.name}</h4>
-                      <span className="focus-state-badge">{autoGranted ? '자동 습득' : selectedLevels.length ? `${Math.max(...selectedLevels.map((focus) => focus.level))}레벨 선택됨` : locked ? '선택 불가' : '미선택'}</span>
+                      <button type="button" className={`focus-status-help ${selectedLevels.length ? 'focus-selected-check' : locked ? 'focus-unavailable-mark' : ''}`}
+                        aria-label={`${first.name}: ${autoGranted ? '자동 습득' : selectedLevels.length ? '선택됨' : locked ? '선택 불가' : '레벨별 선택 안내'}`}
+                        aria-describedby={statusId}>
+                        <span className="material-symbols-outlined ui-icon" aria-hidden="true">{selectedLevels.length ? 'check' : locked ? 'close' : 'info'}</span>
+                        <span id={statusId} role="tooltip" className="focus-status-tooltip">{statusNotes}</span>
+                      </button>
                     </div>
                     {first.englishName && <p className="focus-english-name">{first.englishName}</p>}
                     <p className="focus-preview">{rulesText(first.desc || first.effect)}</p>
@@ -207,8 +224,8 @@ export function FocusPicker(props: Props) {
       </div>
       {visible.length < matching.length && <div className="catalogue-more">
         <p>{matching.length - visible.length}종의 포커스가 더 있습니다.</p>
-        <button type="button" onClick={() => setVisibleCount(visibleCount + 12)}>포커스 {Math.min(12, matching.length - visible.length)}종 더 보기 <span aria-hidden="true">↓</span></button>
-        <button type="button" className="text-button" onClick={() => setVisibleCount(matching.length)}>전체 펼치기</button>
+        <button type="button" onClick={() => setVisibleCount(visibleCount + 12)}>포커스 {Math.min(12, matching.length - visible.length)}종 더 보기 <span className="material-symbols-outlined ui-icon" aria-hidden="true">expand_more</span></button>
+        <button type="button" className="text-button" onClick={() => setVisibleCount(matching.length)}><span className="material-symbols-outlined ui-icon" aria-hidden="true">unfold_more</span>전체 펼치기</button>
       </div>}
       <dialog ref={dialogRef} className="focus-dialog" aria-labelledby="focus-dialog-title" aria-describedby="focus-dialog-help"
         onClose={() => setOpenFamilyId(null)} onKeyDown={containDialogFocus}>
@@ -219,7 +236,7 @@ export function FocusPicker(props: Props) {
               <h3 id="focus-dialog-title">{activeFocus.name}</h3>
               {activeFocus.englishName && <p className="focus-english-name">{activeFocus.englishName}</p>}
             </div>
-            <button type="button" autoFocus onClick={() => dialogRef.current?.close()} aria-label="포커스 설명 닫기">닫기</button>
+            <button type="button" autoFocus onClick={() => dialogRef.current?.close()} aria-label="포커스 설명 닫기" title="포커스 설명 닫기"><span className="material-symbols-outlined ui-icon" aria-hidden="true">close</span></button>
           </header>
           <div className="focus-dialog-body" tabIndex={0} role="region" aria-label="포커스 전체 설명">
             <p id="focus-dialog-help" className="support-text">설명을 읽는 것만으로는 포커스가 선택되지 않습니다. 등록된 각 레벨의 효과를 아래에서 확인하세요.</p>
@@ -248,8 +265,9 @@ export function FocusPicker(props: Props) {
                 <h5>자동 적용 보너스</h5>
                 {focus.bonus.length ? <ul>{focus.bonus.map((bonus, index) =>
                   <li key={index}>{bonusDescription(bonus, skills, attributes)}</li>)}</ul> : <p>등록된 기술·수정치 보너스가 없습니다.</p>}
-                {focus.base_ac && <p>기본 AC: {focus.base_ac.base} + 캐릭터 레벨 ÷ {focus.base_ac.level_divisor} (나눗셈 결과 올림).
-                  갑옷의 기본 AC와 비교하여 높은 값만 사용하고, 방패와 최종 민첩 수정치를 적용합니다. 착용 갑옷의 기술 판정 페널티는 유지됩니다.</p>}
+                {focus.base_ac && <p>기본 AC: {focus.base_ac.base}{focus.base_ac.level_divisor !== undefined && <> + 캐릭터 레벨 ÷ {focus.base_ac.level_divisor} (나눗셈 결과 올림)</>}.
+                  {focus.base_ac.better_armor_bonus !== undefined && <> 착용 갑옷 자체의 기본 AC가 이보다 높으면 그 갑옷 AC에 +{focus.base_ac.better_armor_bonus}.</>}
+                  갑옷과 다른 포커스의 기본 AC 중 높은 값만 사용하고, 방패와 최종 민첩 수정치를 적용합니다. 착용 갑옷의 기술 판정 페널티는 유지됩니다.</p>}
                 {focus.repeatable && <p>{focusCreationLevelReason(focus)
                   ? '이 레벨은 원문상 반복 습득할 수 있지만, 현재 1레벨 캐릭터 생성기에서는 선택할 수 없습니다.'
                   : <>1레벨 포커스는 반복 선택할 수 있으며, 각 항목의 선택 결과는 개별적으로 관리됩니다.{focus.unique_skill ? ' 각 항목은 서로 다른 기술을 선택해야 합니다.' : ''}</>}</p>}
@@ -259,10 +277,12 @@ export function FocusPicker(props: Props) {
                   <p>{focus.tradition_choice.options.map(nameFor).join(' · ')} 중 하나를 선택합니다. 소언사의 순수·부분 여부에 맞는 시작 기교를 얻고 해당 전통의 주문을 배울 수 있습니다. 시작 주문 수는 부분 소언사 2개, 순수 소언사 4개로 유지됩니다.</p>
                   <p>최대 분발은 마법 기술 레벨과 같으며 최소 {focus.tradition_choice.effort.minimum}점입니다. 이 전통에서는 이후 추가 기교를 얻지 않습니다.</p>
                 </>}
-                {focus.score_effect && <p>능력치 규칙: {focus.score_effect.kind === 'raise_to' ? `조건에 맞는 ${focus.score_effect.value} 미만의 육체 능력치 하나를 ${focus.score_effect.value}(으)로 높일 수 있음` : `${focus.score_effect.value}보다 높은 능력치는 최대 하나만 유지하고 나머지 초과분은 낮춤`}. 수정치 보너스와는 별개로 적용합니다.</p>}
+                {focus.score_effect && <p>능력치 규칙: {focus.score_effect.kind === 'redistribute' ? `총점을 보존하여 ${focus.score_effect.target} 미만인 능력치를 선택적으로 ${focus.score_effect.target}로 증가; 제공하는 능력치도 ${focus.score_effect.target} 이상 유지` : focus.score_effect.kind === 'reroll' ? `${nameFor(focus.score_effect.attribute_id)}: 배정·배경 성장 적용 후 1d${focus.score_effect.sides}+${focus.score_effect.bonus}(으)로 교체 (굴림 결과 저장)` : focus.score_effect.kind === 'threshold_replace' ? `${nameFor(focus.score_effect.attribute_id)}: 배정·배경 성장 적용 후 ${focus.score_effect.threshold} 미만이면 ${focus.score_effect.below}, 이상이면 ${focus.score_effect.at_or_above}(으)로 변경` : focus.score_effect.kind === 'raise_to' ? `조건에 맞는 ${focus.score_effect.value} 미만의 육체 능력치 하나를 ${focus.score_effect.value}(으)로 높일 수 있음` : `${focus.score_effect.value}보다 높은 능력치는 최대 하나만 유지하고 나머지 초과분은 낮춤`}. 수정치 보너스와는 별개로 적용합니다.</p>}
                 {Boolean(focus.extra_focus_picks) && <p>추가 포커스 선택권: {focus.extra_focus_picks}개 (이 포커스도 선택권 하나를 사용합니다).</p>}
+                {focus.derived_bonus?.hit_die_penalty !== undefined && <p>클래스·기교로 결정한 HD 결과에 −{focus.derived_bonus.hit_die_penalty}. 건강 수정치와 HP 보너스를 합산한 뒤 최소 HP 1을 적용합니다.</p>}
+                {focus.derived_bonus?.hit_points_per_level !== undefined && <p>캐릭터 레벨당 최대 HP +{focus.derived_bonus.hit_points_per_level}. 현재 1레벨에서는 +{focus.derived_bonus.hit_points_per_level}을 적용하며, 건강 수정치와 합산한 뒤 최소 HP 1을 적용합니다.</p>}
                 {focus.derived_bonus?.base_attack_bonus !== undefined && <p>기본 공격 보너스 조정: {signed(focus.derived_bonus.base_attack_bonus)}. 선택 가능한 포커스에 한해 일반 공격 보너스보다 먼저 클래스 성장 수치에 적용합니다.</p>}
-                {focus.derived_bonus && <p>시트에 적용되는 상시 보정: {focus.derived_bonus.attack ? `공격 ${signed(focus.derived_bonus.attack)}. ` : ''}{validSaveModifiers(focus.derived_bonus.saves) ? `내성굴림: ${saveModifierLabel(focus.derived_bonus.saves)} (목표값에 반영). ` : ''}{focus.derived_bonus.encumbrance_str ? `하중 계산용 근력 ${signed(focus.derived_bonus.encumbrance_str)}. ` : ''}{focus.derived_bonus.system_strain_max ? `최대 기관계 부담 ${signed(focus.derived_bonus.system_strain_max)}.` : ''}</p>}
+                {focus.derived_bonus && Boolean(focus.derived_bonus.attack || focus.derived_bonus.saves || focus.derived_bonus.encumbrance_str || focus.derived_bonus.system_strain_max) && <p>시트에 적용되는 상시 보정: {focus.derived_bonus.attack ? `공격 ${signed(focus.derived_bonus.attack)}. ` : ''}{validSaveModifiers(focus.derived_bonus.saves) ? `내성굴림: ${saveModifierLabel(focus.derived_bonus.saves)} (목표값에 반영). ` : ''}{focus.derived_bonus.encumbrance_str ? `하중 계산용 근력 ${signed(focus.derived_bonus.encumbrance_str)}. ` : ''}{focus.derived_bonus.system_strain_max ? `최대 기관계 부담 ${signed(focus.derived_bonus.system_strain_max)}.` : ''}</p>}
                 {validConditionalSaves(focus.conditional_saves) && focus.conditional_saves.length > 0 && <>
                   <h5>조건부 내성굴림 보정</h5>
                   <ul>{focus.conditional_saves.map((rule, index) => <li key={index}>

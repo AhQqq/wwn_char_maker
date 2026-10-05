@@ -54,26 +54,14 @@ export function InventorySummary({ evaluation, equipment, properties }: {
 }) {
   const { starting, armorClass } = evaluation
   return <div className="equipment-summary">
-    <p><strong>{starting.package ? starting.package.name : starting.complete ? '주사위로 정한 시작 은화' : '시작 장비 미완료'}</strong></p>
+    {starting.complete && <p><strong>{starting.package?.name ?? '주사위로 정한 시작 은화'}</strong></p>}
     {starting.choice.method === 'silver' && starting.complete &&
       <p>({starting.choice.rolls.join(' + ')}) &times; 10 = {starting.silver}은화.</p>}
-    <p>시작 자금: {starting.silver ?? '--'}은화. 사용: {coinLabel(evaluation.spentCopper)}. 잔액: <strong>{coinLabel(evaluation.remainingCopper)}</strong>.</p>
+    <p>시작 자금: {starting.silver ?? 0}은화. 사용: {coinLabel(evaluation.spentCopper)}. 잔액: <strong>{coinLabel(evaluation.remainingCopper ?? 0)}</strong>.</p>
     {evaluation.items.length > 0 && <EquipmentTable items={evaluation.items} caption="보유 장비: 꾸러미와 구매한 장비" />}
     <p className="support-text">표기 하중 합계: {evaluation.encumbrance.listed}{!evaluation.encumbrance.complete && ' (일부만 합산하거나 검토가 필요함)'}.</p>
     <RulesLink topic="equipment">하중 표기 안내</RulesLink>
     {evaluation.encumbrance.reviewIds.length > 0 && <p className="support-text">하중 확인 필요: {evaluation.encumbrance.reviewIds.map((id) => equipment.find((item) => item.id === id)?.name ?? id).join(', ')}.</p>}
-    <div className="info-panel equipment-ac" aria-live="polite">
-      <strong>AC: {armorClass.value ?? '미정'}</strong>
-      {armorClass.complete ? <>
-        <p>기본 {armorClass.base} + 방패 보너스 {armorClass.shieldBonus} + 민첩 수정치 ({armorClass.dexterity}) = {armorClass.value}.</p>
-        <p>기본 AC 출처: {armorClass.baseSource?.name}.</p>
-        {armorClass.focusBases.filter((source) => source.instanceId !== armorClass.baseSource?.instanceId).map((source) =>
-          <p className="support-text" key={source.instanceId}>{source.name}의 기본 AC {source.baseAc}: 더 높은 기본 AC를 사용하므로 중첩하지 않습니다.</p>)}
-        <p>갑옷: {armorClass.armor?.name}. 손에 든 방패: {armorClass.shield?.name ?? '없음'}.</p>
-        <p>갑옷 판정 보정: 잠행 {armorClass.skillPenalties.sneak} / 운동 {armorClass.skillPenalties.exert}.</p>
-        {armorClass.shield && <p>{properties.find((item) => item.id === 'shield_protection')?.description}</p>}
-      </> : <ul className="issue-list">{armorClass.issues.map((issue, index) => <li key={index}>{ko(issue)}</li>)}</ul>}
-    </div>
     {armorClass.complete && armorClass.weapon && <details className="equipment-details">
       <summary>사용 무기: {armorClass.weapon.name}</summary>
       <EquipmentItemDetails item={armorClass.weapon} properties={properties} />
@@ -115,7 +103,7 @@ export function EquipmentInventory({ evaluation, purchases, loadout, equipment, 
     onLoadout(next)
   }
   return <section className="card equipment-inventory" aria-labelledby="equipment-inventory-title">
-    <div className="card-header"><div><p className="step-label">04 / 필요한 물건 갖추기</p><h2 id="equipment-inventory-title">장비 구매와 착용</h2></div><RulesLink topic="equipment" /></div>
+    <div className="card-header"><div><h2 id="equipment-inventory-title">장비 구매와 착용</h2></div><RulesLink topic="equipment" /></div>
     <p className="support-text">장비를 구매한 뒤, 착용하거나 손에 들 장비를 선택하세요.</p>
     <div className="equipment-budget" role="status">
       <span>시작 자금 <strong>{evaluation.starting.silver ?? '--'}은화</strong></span>
@@ -146,7 +134,7 @@ export function EquipmentInventory({ evaluation, purchases, loadout, equipment, 
           <option value="shield">방패</option><option value="gear">모험 장비</option><option value="bundle">묶음</option>
         </select></label>
       </div>
-      <p className="support-text">검색 결과 {filtered.length}종. 자금이 부족하거나 가격이 없는 장비의 설명도 읽을 수 있습니다.</p>
+      <p className="support-text">검색 결과 {filtered.length}종</p>
       <div className="focus-grid equipment-catalogue-grid">
         {filtered.map((item) => {
           const price = equipmentPriceCopper(item)
@@ -186,7 +174,7 @@ export function EquipmentInventory({ evaluation, purchases, loadout, equipment, 
     {heldShield && <details className="equipment-details"><summary>손에 든 방패 규칙 보기</summary>
       <EquipmentItemDetails item={heldShield} properties={properties} /></details>}
     {evaluation.issues.length > 0 && <ul className="issue-list" role="status">{evaluation.issues.map((issue, index) => <li key={index}>{ko(issue)}</li>)}</ul>}
-    <p className="support-text"><a href="https://ahqqq.github.io/equipment.html" target="_blank" rel="noreferrer">장비 출처</a>. 원문의 수치를 유지했으며, 알려진 불일치는 장비 데이터 검토 문서에 기록되어 있습니다.</p>
+    <p className="support-text"><a href="https://ahqqq.github.io/equipment.html" target="_blank" rel="noreferrer">장비 출처</a></p>
     <details className="equipment-details"><summary>장비 특성 전체 목록</summary>
       <dl className="equipment-property-list">{properties.map((property) => <div key={property.id}>
         <dt>{property.name}</dt><dd>{rulesText(property.description)}</dd>

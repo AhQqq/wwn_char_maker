@@ -139,7 +139,7 @@ const messages: Record<string, string> = {
   "Class pairing exclusions are checked in both directions using incompatible_classes and incompatible_archetypes.": "클래스와 원형의 조합 제한은 양쪽 클래스 모두를 기준으로 확인합니다.",
   "Starting arts are applied once per distinct class, using partial or full rules. Fixed grants, restricted choices, and additional picks are separate.": "시작 기교는 부분·순수 클래스 규칙에 따라 클래스별로 한 번씩 부여됩니다. 자동 습득·지정 목록·추가 선택은 별개입니다.",
   "Base hit dice, attack bonus, and focus count come from progression_tables.json; applicable encoded ability overrides determine effective hit dice before HP is calculated.": "기본 히트 주사위·공격 보너스·포커스 선택권은 클래스 성장 표를 따릅니다. 구현된 능력의 예외를 적용한 히트 주사위로 HP를 계산합니다.",
-  "AC uses the higher of armor base (10 unarmored) and eligible focus base AC, then applies the usual shield rule and final DEX. Worn armor penalties remain. Legacy armor bonuses are ignored.": "갑옷 기본 AC(맨몸 10)와 유효한 포커스의 기본 AC 중 높은 값을 사용한 뒤 기존 방패 규칙과 최종 민첩 수정치를 적용합니다. 착용 갑옷의 페널티는 유지하며, 이전 갑옷 보너스는 적용하지 않습니다.",
+  "AC uses the highest eligible armor or focus base after encoded armor adjustments, then applies the usual shield rule and final DEX. Worn armor penalties remain. Legacy armor bonuses are ignored.": "해당되는 갑옷 보정을 적용하고, 갑옷과 포커스의 기본 AC 중 높은 값을 사용한 뒤 방패 규칙과 최종 민첩 수정치를 적용합니다. 착용 갑옷의 페널티는 유지하며, 이전 갑옷 보너스는 적용하지 않습니다.",
   "Base AC rules require a positive integer character level.": "기본 AC 계산에는 1 이상의 정수 캐릭터 레벨이 필요합니다.",
   "Starting equipment grants one fixed package or the sum of three saved d6 rolls multiplied by 10 silver, never both. Client-supplied grants and money totals are not authoritative.": "시작 장비는 고정 꾸러미 하나 또는 저장된 3d6 합계의 10배에 해당하는 은화 중 하나입니다. 장비와 자금 총액은 서버에서 다시 계산합니다.",
   "Catalogue purchases use 10 copper per silver and cannot exceed starting funds. Missing prices are not free items. Package grants cannot be sold for extra starting funds.": "구매는 10동화 = 1은화로 계산하며 시작 자금을 초과할 수 없습니다. 가격 미기재 장비는 무료가 아니며, 꾸러미 장비를 팔아 시작 자금을 늘릴 수 없습니다.",
@@ -257,6 +257,9 @@ export function ko(message: string): string {
     if (match) return format(...match.slice(1))
   }
   if (/^(minimum|maximum) /.test(message) && message.includes(', ')) return message.split(', ').map(ko).join(', ')
+  if (message.includes(': invalid score redistribution;')) return message.split(': ')[0] + ': 능력치 재분배를 확인하세요. 선택한 낮은 능력치는 9로 올리고, 제공하는 능력치는 9 이상으로 유지하며 총점을 보존해야 합니다.'
+  const scoreDie = /^(.+): roll and save a valid d(\d+) score die\.$/.exec(message)
+  if (scoreDie) return `${nameFor(scoreDie[1])}: 능력치용 d${scoreDie[2]} 주사위를 굴려 결과를 저장하세요.`
   const separator = message.indexOf(': ')
   if (separator > 0) {
     const label = message.slice(0, separator)

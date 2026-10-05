@@ -24,7 +24,7 @@ export function EquipmentPicker({ choice, packages, equipment, evaluation, notic
   onRoll: () => void
 }) {
   return <section className="card equipment-selection creation-section" id="stage-equipment" aria-labelledby="equipment-selection-title">
-    <div className="card-header"><div><p className="step-label">04 / 여정의 준비물</p><h2 id="equipment-selection-title">시작 장비 선택</h2></div><RulesLink topic="equipment" /></div>
+    <div className="card-header"><div><h2 id="equipment-selection-title">시작 장비 선택</h2></div><RulesLink topic="equipment" /></div>
     <p className="support-text">꾸러미 또는 3d6 × 10은화 중 하나를 받습니다. 방식을 바꾸면 구매·착용 내역이 초기화됩니다.</p>
     {notice && <p className="spell-notice" role="status">{ko(notice)}</p>}
     <div className="segmented equipment-method" role="group" aria-label="시작 장비 획득 방식">
@@ -56,7 +56,7 @@ export function EquipmentPicker({ choice, packages, equipment, evaluation, notic
     </div>}
     {choice.method === 'silver' && <div className="roll-card">
       <h3>시작 자금</h3>
-      <button type="button" onClick={onRoll}>{choice.rolls.length ? '3d6 다시 굴리기 (구매·착용 초기화)' : '3d6으로 시작 은화 굴리기'}</button>
+      <button type="button" onClick={onRoll}><span className="material-symbols-outlined ui-icon" aria-hidden="true">casino</span>{choice.rolls.length ? '3d6 다시 굴리기 (구매·착용 초기화)' : '3d6으로 시작 은화 굴리기'}</button>
       <div role="status" aria-live="polite">
         {evaluation.complete ? <p className="equipment-roll-result">({choice.rolls.join(' + ')}) &times; 10 = <strong>{evaluation.silver}은화</strong></p>
           : <p className="support-text">아직 굴리지 않았습니다.</p>}

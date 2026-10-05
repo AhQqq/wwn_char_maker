@@ -19,7 +19,7 @@ export function SpellPicker({ classIds, classes, spells, choices, traditions = [
   return (
     <section className="card spell-selection creation-section" id="stage-spells" aria-labelledby="spell-selection-title">
       <div className="card-header">
-        <div><p className="step-label">07 / 마지막 준비</p><h2 id="spell-selection-title">1레벨 주문 습득</h2></div>
+        <div><h2 id="spell-selection-title">1레벨 주문 습득</h2></div>
         <RulesLink topic="spells" />
       </div>
       {notice && <p className="spell-notice" role="status">{ko(notice)}</p>}
@@ -38,7 +38,7 @@ export function SpellPicker({ classIds, classes, spells, choices, traditions = [
                 <h3>{letter}번째 클래스: {className}</h3>
                 <span role="status">{choices[slot].length}/{caster ? 2 : 0}개 습득</span>
               </div>
-              {!caster ? <p className="support-text">이 클래스는 주문을 부여하지 않습니다.</p> : <>
+              {!caster ? <p className="support-text">주문 없음</p> : <>
                 <p className="support-text">선택 가능한 학파: {spellSchools(classIds[slot], traditions).map((school) => ko(spellSchoolLabel(school))).join(', ')}.</p>
                 {classIds[slot] === 'invoker' && traditions.map((grant) => <p className="support-text" key={grant.instanceId}>{nameFor(grant.focusId)}: {nameFor(grant.traditionId)}</p>)}
                 <ol className="learned-spell-list" aria-label={`${letter}번째 클래스에서 습득한 주문`}>

@@ -20,7 +20,7 @@ export function evaluateCharacterWithData(draft: CharacterInput, data: Character
   const core = evaluateCreationCore(draft, data, { attributes: attributeEvaluation.attributes, classes: classChoices });
   const { progressionKey, progression, backgroundEvaluation, backgroundAttributes, artFocusGrants, focusCreation, skillAllocation } = core;
   const { classAbilities, focusAbilities, abilitySelection, baseModifiers, modifiers, savingThrows, equipmentInventory,
-    hitDiceEvaluation, hitDice, hitDie, hitPoints, progressionAttackBonus, baseAttackBonus, focusTraditions, focusEffort } =
+    hitDiceEvaluation, hitDice, hitDie, hitPoints, hitPointBreakdown, progressionAttackBonus, baseAttackBonus, focusTraditions, focusEffort, movementSpeed, initiative, systemStrain } =
     evaluateCreationEffects(draft, data, core, classEvaluation);
   const selectedFocus = focusCreation.instances;
   const focusLimit = focusCreation.limit;
@@ -114,7 +114,7 @@ export function evaluateCharacterWithData(draft: CharacterInput, data: Character
     "Class pairing exclusions are checked in both directions using incompatible_classes and incompatible_archetypes.",
     "Starting arts are applied once per distinct class, using partial or full rules. Fixed grants, restricted choices, and additional picks are separate.",
     "Base hit dice, attack bonus, and focus count come from progression_tables.json; applicable encoded ability overrides determine effective hit dice before HP is calculated.",
-    "AC uses the higher of armor base (10 unarmored) and eligible focus base AC, then applies the usual shield rule and final DEX. Worn armor penalties remain. Legacy armor bonuses are ignored.",
+    "AC uses the highest eligible armor or focus base after encoded armor adjustments, then applies the usual shield rule and final DEX. Worn armor penalties remain. Legacy armor bonuses are ignored.",
     "Starting equipment grants one fixed package or the sum of three saved d6 rolls multiplied by 10 silver, never both. Client-supplied grants and money totals are not authoritative.",
     "Catalogue purchases use 10 copper per silver and cannot exceed starting funds. Missing prices are not free items. Package grants cannot be sold for extra starting funds.",
     "Only owned equipment may be equipped. A held shield conflicts with an active two-handed weapon. Armor penalties affect Sneak/Exert checks, not learned skill levels.",
@@ -160,7 +160,9 @@ export function evaluateCharacterWithData(draft: CharacterInput, data: Character
     focusBonuses: focusBonuses.details,
     modifiers,
     derived: {
+      movementSpeed, initiative, systemStrain,
       hitPoints,
+      hitPointBreakdown,
       hitDie,
       hitDice,
       baseHitDice: hitDiceEvaluation.baseHitDice,

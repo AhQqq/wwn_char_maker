@@ -1,3 +1,4 @@
+import { SKILL_ICONS } from './skillIcons'
 import { startTransition, useDeferredValue, useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { CreationNavigation } from './CreationNavigation'
@@ -32,8 +33,8 @@ import { FocusPicker } from './FocusPicker'
 import { focusInstanceLabel } from './focusSelection'
 import type { FocusOption as FocusData } from './focusSelection'
 import { getModifier } from '../../shared/attributeModifier'
-import { focusCreationLevelReason, modifierLimitText, normalizeFocusBonusChoices } from '../../shared/focusBonuses'
-import { evaluateFocusInstances, instanceFocusData, normalizeFocusRuleChoices, pruneFocusInstances, readFocusInstances, removeFocusInstance } from '../../shared/focusCreation'
+import { focusCreationLevelReason, normalizeFocusBonusChoices } from '../../shared/focusBonuses'
+import { evaluateFocusInstances, instanceFocusData, normalizeFocusRuleChoices, pruneFocusInstances, readFocusInstances, removeFocusInstance, restoreFocusBonusChoices } from '../../shared/focusCreation'
 import type { FocusInstance, FocusRuleChoice, FocusRuleChoices } from '../../shared/focusCreation'
 import { evaluateFocusTraditions } from '../../shared/focusTraditions'
 import { FOCUS_ALLOWANCE_LABELS } from './korean'
@@ -144,7 +145,9 @@ const EMPTY_EVALUATION: Evaluation = {
   focusBonuses: [],
   skillGrantCounts: {},
   derived: {
+    movementSpeed: 30, initiative: 0, systemStrain: { current: 0, maximum: 0 },
     hitPoints: 0,
+    hitPointBreakdown: { hitDiceMaximum: 0, constitutionModifier: 0, focusBonus: 0, sources: [], minimumAdjustment: 0 },
     hitDie: 0,
     hitDice: '',
     baseHitDice: '',
@@ -226,9 +229,6 @@ function getBackgroundTable(background: BackgroundData, table: BackgroundRollTab
   return table === 'growth' ? background.growth : background.learn
 }
 
-function tableDieLabel(background: BackgroundData, table: BackgroundRollTable) {
-  return table === 'growth' ? `성장 표 (d${background.growth.length})` : `학습 표 (d${background.learn.length})`
-}
 
 function actionSkillId(action: DataAction) {
   return action.action === 'fixed_skill' && action.id && SKILL_BY_ID.has(action.id) ? action.id : undefined
@@ -280,7 +280,11 @@ function backgroundChoiceLabel(result: BackgroundRollResult) {
 }
 
 function keepFocusBonusChoices(source: unknown, instances: FocusInstance[]): FocusBonusChoices {
-  return normalizeFocusBonusChoices(source, instances.map((item) => item.instanceId), instanceFocusData(instances, FOCI))
+  const choices = normalizeFocusBonusChoices(source, instances.map((item) => item.instanceId), instanceFocusData(instances, FOCI))
+  for (const instance of instances) {
+    if (instance.focusId === 'gnomes1') (choices[instance.instanceId] ??= {})['0'] ??= ['']
+  }
+  return choices
 }
 
 function createInitialDraft(): Draft {
@@ -338,7 +342,23 @@ function draftAppliedFoci(draft: Pick<Draft, 'classChoices' | 'focusInstances'> 
     focusBudgetForProgression(classProgression(classes)), draftArtFocusGrants(draft).grants).applied
 }
 
+function reconcileBoundFocusChoices(draft: Draft): Draft {
+  const refunded = new Set(evaluateDraftSkills(draft).focusCreation.refundedInstances.map((item) => item.instanceId))
+  if (!refunded.size) return draft
+  const focusInstances = draft.focusInstances.filter((item) => !refunded.has(item.instanceId))
+  return { ...draft, focusInstances, focusBonusChoices: keepFocusBonusChoices(draft.focusBonusChoices, focusInstances),
+    focusRuleChoices: normalizeFocusRuleChoices(draft.focusRuleChoices, focusInstances) }
+}
+
+function prospectiveFocusSkillAllocation(draft: Draft, id: string, bonusIndex: number, slotIndex: number, value: string) {
+  const slots = [...(draft.focusBonusChoices[id]?.[String(bonusIndex)] ?? [])]
+  slots[slotIndex] = value
+  return evaluateDraftSkills({ ...draft, focusBonusChoices: { ...draft.focusBonusChoices,
+    [id]: { ...draft.focusBonusChoices[id], [String(bonusIndex)]: slots } } }).allocation
+}
+
 function reconcileMagicChoices(draft: Draft): Draft {
+  draft = reconcileBoundFocusChoices(draft)
   const traditions = draftTraditions(draft)
   const artChoicesByClass = normalizeArtChoices(draft.artChoicesByClass, draft.classChoices, CLASSES, STARTING_ARTS, ARTS, traditions, draftAppliedFoci(draft))
   const grants = draftArtFocusGrants({ ...draft, artChoicesByClass }).grants
@@ -413,7 +433,7 @@ function readSavedDraft(): { draft: Draft; spellNotice: string; artNotice: strin
     const freeSkill = parsed.freeSkill && SKILL_BY_ID.has(parsed.freeSkill) ? parsed.freeSkill : fallback.freeSkill
 
     return { spellNotice: restoredSpells.notice, artNotice: [restoredArts.notice, savedInstances.length !== focusInstances.length
-      ? '기교로 자동 습득하는 포커스의 중복 선택을 해제하고 선택권을 반환했습니다.' : ''].filter(Boolean).join(' '), equipmentNotice: [restoredEquipment.notice, restoredInventory.notice].filter(Boolean).join(' '), draft: {
+      ? '기교로 자동 습득하는 포커스의 중복 선택을 해제하고 선택권을 반환했습니다.' : ''].filter(Boolean).join(' '), equipmentNotice: [restoredEquipment.notice, restoredInventory.notice].filter(Boolean).join(' '), draft: reconcileBoundFocusChoices({
       ...fallback,
       ...parsed,
       background,
@@ -425,7 +445,7 @@ function readSavedDraft(): { draft: Draft; spellNotice: string; artNotice: strin
       classBonusChoices: normalizeClassBonusChoices(parsed.classBonusChoices, restoredClasses),
       focusInstances,
       focusRuleChoices,
-      focusBonusChoices: keepFocusBonusChoices(parsed.focusBonusChoices, focusInstances),
+      focusBonusChoices: restoreFocusBonusChoices(parsed.focusBonusChoices, focusInstances, FOCI),
       freeSkill,
       backgroundSkill,
       backgroundMethod,
@@ -434,7 +454,7 @@ function readSavedDraft(): { draft: Draft; spellNotice: string; artNotice: strin
       backgroundRollResults,
       spellChoicesByClassSlot: restoredSpells.choices,
       artChoicesByClass: restoredArts.choices,
-    } }
+    }) }
   } catch {
     return { draft: fallback, spellNotice: '', artNotice: '', equipmentNotice: '' }
   }
@@ -493,7 +513,6 @@ function App() {
   const focusLimit = focusCreation.limit
   const skillOptions = SKILLS.map((skill) => ({ id: skill.id, label: skillLabel(skill.id) }))
   const classGrants = classSkillGrants(selectedClasses, draft.classBonusChoices)
-  const fixedClassGrants = classGrants.filter((grant) => grant.kind === 'fixed')
   const classSkillChoices = classGrants.filter((grant) => grant.kind === 'choice')
   const resolvedClassBuild = classBuildName(draft.classChoices, CLASSES, COMBINATIONS)
   const artPlans = getArtPlans(draft.classChoices, CLASSES, STARTING_ARTS, ARTS, focusTraditions, focusCreation.applied)
@@ -692,6 +711,30 @@ function App() {
     })
   }
 
+  function updateScoreTransfers(id: string, scoreTransfers: Record<string, number>) {
+    setDraft((current) => {
+      const instance = current.focusInstances.find((item) => item.instanceId === id)
+      if (!instance || FOCUS_BY_ID.get(instance.focusId)?.score_effect?.kind !== 'redistribute') return current
+      return { ...current, focusRuleChoices: { ...current.focusRuleChoices,
+        [id]: { ...current.focusRuleChoices[id], scoreTransfers } } }
+    })
+  }
+
+  function rollFocusScore(id: string) {
+    const instance = draft.focusInstances.find((item) => item.instanceId === id)
+    const effect = instance && FOCUS_BY_ID.get(instance.focusId)?.score_effect
+    if (effect?.kind !== 'reroll') return
+    // Roll outside the state updater: React may replay updater functions.
+    const die = Math.floor(Math.random() * effect.sides) + 1
+    setDraft((current) => {
+      if (!current.focusInstances.some((item) => item.instanceId === id && item.focusId === instance!.focusId)) return current
+      const previous = current.focusRuleChoices[id]?.scoreDie
+      if (Number.isInteger(previous) && previous! >= 1 && previous! <= effect.sides) return current
+      return { ...current, focusRuleChoices: { ...current.focusRuleChoices,
+        [id]: { ...current.focusRuleChoices[id], scoreDie: die } } }
+    })
+  }
+
   function updateFocusRuleChoice(id: string, key: keyof FocusRuleChoice, value: string) {
     if (key === 'traditionId') {
       setSpellNotice('전통에 맞춰 주문 선택을 다시 확인했습니다. 계속 배울 수 있는 주문만 유지됩니다.')
@@ -711,20 +754,20 @@ function App() {
       const instance = current.focusInstances.find((item) => item.instanceId === focusId)
       if (!instance) return current
       const definition = FOCUS_BY_ID.get(instance.focusId)
-      const { bonuses, allocation } = evaluateDraftSkills(current)
+      const { bonuses } = evaluateDraftSkills(current)
       const detail = bonuses.details.find((item) => item.focusId === focusId)
       const option = detail?.choices.find((item) => item.bonusIndex === bonusIndex && item.slotIndex === slotIndex)
       if (!option || (choiceId && !option.options.includes(choiceId))) return current
       if (choiceId && current.focusBonusChoices[focusId]?.[String(bonusIndex)]?.some((id, index) => index !== slotIndex && id === choiceId)) return current
       if (definition?.unique_skill && choiceId && current.focusInstances.some((item) => item.instanceId !== focusId && item.focusId === instance.focusId && current.focusBonusChoices[item.instanceId]?.['0']?.[0] === choiceId)) return current
       if (definition?.bonus[bonusIndex]?.action === 'choice_skill' && choiceId &&
-        skillChoiceReason(allocation, `focus:${focusId}:${bonusIndex}:${slotIndex}`, choiceId)) return current
+        skillChoiceReason(prospectiveFocusSkillAllocation(current, focusId, bonusIndex, slotIndex, choiceId), `focus:${focusId}:${bonusIndex}:${slotIndex}`, choiceId)) return current
       const choices = keepFocusBonusChoices(current.focusBonusChoices, current.focusInstances)
       const focusChoices = { ...choices[focusId] }
       const slots = [...(focusChoices[String(bonusIndex)] ?? [])]
       slots[slotIndex] = choiceId
       focusChoices[String(bonusIndex)] = slots
-      return { ...current, focusBonusChoices: { ...choices, [focusId]: focusChoices } }
+      return reconcileBoundFocusChoices({ ...current, focusBonusChoices: { ...choices, [focusId]: focusChoices } })
     })
   }
 
@@ -799,6 +842,40 @@ function App() {
     })
   }
 
+  const backgroundTables = (
+<div className="background-roll-tables">
+              {(['growth', 'learn'] as const).map((table) => {
+                const rows = getBackgroundTable(activeBackground, table)
+                return (
+                  <div key={table} className="background-table-block"><table className="background-roll-table">
+                    <caption>{table === 'growth' ? '성장 표' : '학습 표'}</caption>
+                    <thead>
+                      <tr><th scope="col">d{rows.length}</th><th scope="col">결과</th></tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((action, index) => (
+                        <tr key={index}>
+                          <th scope="row">{index + 1}</th>
+                          <td>{describeAction(action)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {draft.backgroundMethod === 'roll' && <div className="background-table-allocation" role="group" aria-label={`${table === 'growth' ? '성장' : '학습'} 주사위 배정`}>
+                    <button type="button" aria-label={`${table === 'growth' ? '성장' : '학습'} 주사위 줄이기`}
+                      disabled={!draft.backgroundRollTables.includes(table)}
+                      onClick={() => updateBackgroundRollTable(draft.backgroundRollTables.lastIndexOf(table), table === 'growth' ? 'learn' : 'growth')}>−</button>
+                    <span>배정 <strong>{draft.backgroundRollTables.filter((value) => value === table).length}</strong>회</span>
+                    <button type="button" aria-label={`${table === 'growth' ? '성장' : '학습'} 주사위 늘리기`}
+                      disabled={draft.backgroundRollTables.filter((value) => value === table).length >= 3}
+                      onClick={() => updateBackgroundRollTable(draft.backgroundRollTables.findIndex((value) => value !== table), table)}>+</button>
+                  </div>}
+                  </div>
+                )
+              })}
+            </div>
+  )
+
   return (
     <main className="app-shell">
       <a className="skip-link" href="#stage-attributes">캐릭터 생성으로 바로 가기</a>
@@ -809,14 +886,16 @@ function App() {
         </h1>
       </header>
 
-      <CreationNavigation steps={evaluation.stepStatus} ready={evaluationCurrent} offline={Boolean(evaluationError)} />
+      <CreationNavigation steps={[...evaluation.stepStatus,
+        { key: 'classChoice', complete: classValidation.complete && skillAllocation.issues.every((issue) => issue.scope !== 'class') },
+        { key: 'focusChoice', complete: focusCreation.complete && artFocusIssues.length === 0 && skillAllocation.issues.every((issue) => issue.scope !== 'focus') },
+      ]} ready={evaluationCurrent} offline={Boolean(evaluationError)} />
 
       <section className="layout-grid">
         <div className="builder-column">
           <section className="card creation-section" id="stage-attributes" aria-labelledby="attributes-title">
             <div className="card-header">
               <div>
-                <p className="step-label">01 / 타고난 자질</p>
                 <h2 id="attributes-title">능력치와 수정치</h2>
               </div>
               <RulesLink topic="attributes" />
@@ -826,7 +905,7 @@ function App() {
               <button type="button" className={draft.attributeMethod === 'array' ? 'active' : ''}
                 aria-pressed={draft.attributeMethod === 'array'} onClick={() => { if (draft.attributeMethod !== 'array') resetToArray() }}>고정 수치 배정</button>
               <button type="button" className={draft.attributeMethod === 'rolled' ? 'active' : ''}
-                aria-pressed={draft.attributeMethod === 'rolled'} onClick={() => { if (draft.attributeMethod !== 'rolled') rerollInOrder() }}>순서대로 3d6 굴리기</button>
+                aria-pressed={draft.attributeMethod === 'rolled'} onClick={() => { if (draft.attributeMethod !== 'rolled') rerollInOrder() }}><span className="material-symbols-outlined ui-icon" aria-hidden="true">casino</span>순서대로 3d6 굴리기</button>
             </div>
 
             <div className="attribute-grid">
@@ -867,7 +946,7 @@ function App() {
                     ))}
                   </select>
                 </label>
-                <button type="button" onClick={rerollInOrder}>능력치 여섯 개 모두 다시 굴리기</button>
+                <button type="button" onClick={rerollInOrder}><span className="material-symbols-outlined ui-icon" aria-hidden="true">casino</span>능력치 여섯 개 모두 다시 굴리기</button>
               </div>
             )}
           </section>
@@ -875,13 +954,12 @@ function App() {
           <section className="card creation-section" id="stage-background" aria-labelledby="background-title">
             <div className="card-header">
               <div>
-                <p className="step-label">02 / 모험 이전의 삶</p>
                 <h2 id="background-title">배경과 시작 기술</h2>
               </div>
               <RulesLink topic="background" />
             </div>
 
-            <div className="form-grid">
+            <div className="form-grid two-up background-identity">
               <label>
                 <span>배경</span>
                 <select value={draft.background} onChange={(event) => handleBackgroundChange(event.target.value)}>
@@ -891,10 +969,10 @@ function App() {
                 </select>
               </label>
 
-              <div className="info-panel">
-                <strong>{activeBackground.name}</strong>
-                <p>{activeBackground.description}</p>
-                <p><strong>보너스 기술:</strong> {activeBackground.free_skill.map(describeAction).join(', ')}</p>
+              <div className="background-starting-skill">
+
+
+                <span className="background-skill-label">시작 기술</span>{fixedBackgroundSkill && <p className="background-fixed-skill"><span className="material-symbols-outlined ui-icon" aria-hidden="true">{SKILL_ICONS[fixedBackgroundSkill]}</span>{SKILL_BY_ID.get(fixedBackgroundSkill)?.name ?? nameFor(fixedBackgroundSkill)} + 1</p>}
                 {!fixedBackgroundSkill && (
                   <label className="background-bonus-choice">
                     <span className="sr-only">보너스 기술 선택</span>
@@ -905,37 +983,29 @@ function App() {
                         allocation={skillAllocation} choiceKey="background:free:0" />
                     </select>
                     <SkillChoiceFeedback allocation={skillAllocation} choiceKey="background:free:0" />
-                    <small>이 배경에서 허용하는 기술 중 하나를 선택하세요.</small>
+                    
                   </label>
                 )}
-                <p><strong>추천 기술:</strong> {activeBackground.sugg_skill.map(describeAction).join(', ')}</p>
+
               </div>
             </div>
 
-            <div className="background-roll-tables">
-              {(['growth', 'learn'] as const).map((table) => {
-                const rows = getBackgroundTable(activeBackground, table)
-                return (
-                  <table key={table} className="background-roll-table">
-                    <caption>{table === 'growth' ? '성장 표' : '학습 표'}</caption>
-                    <thead>
-                      <tr><th scope="col">d{rows.length}</th><th scope="col">결과</th></tr>
-                    </thead>
-                    <tbody>
-                      {rows.map((action, index) => (
-                        <tr key={index}>
-                          <th scope="row">{index + 1}</th>
-                          <td>{describeAction(action)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )
-              })}
-            </div>
-
+            <details className="background-description" key={activeBackground.id}>
+              <summary>배경 설명과 추천 기술</summary>
+              <p>{activeBackground.description}</p>
+              <p className="support-text">추천 기술: {activeBackground.sugg_skill.map(describeAction).join(', ')}</p>
+            </details>
             <div className="background-method">
-              <h3>추가 배경 기술 획득 방식</h3>
+              <div className="background-method-heading">
+                <h3>추가 기술</h3>
+                <div className="background-earned-skills" aria-label="추가 배경에서 얻은 기술" aria-live="polite">
+                  {core.backgroundEvaluation.skillGrants.filter((grant) => !grant.key.startsWith('background:free:') && grant.skillId).map((grant) =>
+                    <span className="focus-granted-skill" key={grant.key}>
+                      {SKILL_ICONS[grant.skillId] && <span className="material-symbols-outlined ui-icon" aria-hidden="true">{SKILL_ICONS[grant.skillId]}</span>}
+                      {SKILL_BY_ID.get(grant.skillId)?.name ?? nameFor(grant.skillId)} +1
+                    </span>)}
+                </div>
+              </div>
               <div className="segmented" role="group" aria-label="배경 기술 획득 방식">
                 <button type="button" className={draft.backgroundMethod === 'pick' ? 'active' : ''}
                   aria-pressed={draft.backgroundMethod === 'pick'} onClick={() => updateBackgroundMethod('pick')}>
@@ -943,7 +1013,7 @@ function App() {
                 </button>
                 <button type="button" className={draft.backgroundMethod === 'roll' ? 'active' : ''}
                   aria-pressed={draft.backgroundMethod === 'roll'} onClick={() => updateBackgroundMethod('roll')}>
-                  주사위 3번 굴리기
+                  <span className="material-symbols-outlined ui-icon" aria-hidden="true">casino</span>주사위 3번 굴리기
                 </button>
               </div>
               <p className="support-text">방식을 바꾸면 이전 배경 선택과 주사위 결과가 초기화됩니다.</p>
@@ -951,7 +1021,7 @@ function App() {
 
             {draft.backgroundMethod === 'pick' && (
               <>
-                <p className="support-text">학습 기술 두 개를 고르세요.</p>
+                
                 <div className="form-grid two-up">
                   {[0, 1].map((index) => (
                     <label key={index}>
@@ -971,30 +1041,26 @@ function App() {
               </>
             )}
 
+            {draft.backgroundMethod !== 'roll' && <details className="background-table-reference"><summary>성장·학습 표 보기</summary>{backgroundTables}</details>}
+
             {draft.backgroundMethod === 'roll' && (
               <>
+                {backgroundTables}
                 <div className="card-header inline-header">
                   <div>
-                    <p className="subheading">배경 주사위 배정</p>
-                    <h3>세 번의 주사위를 표에 배정</h3>
+                    
+                    <h3>주사위 배정 · 총 3회</h3>
                   </div>
                   <button type="button" onClick={rollBackgroundTables}>배정한 주사위 굴리기</button>
                 </div>
-                <p className="support-text">성장 표와 학습 표에 원하는 조합으로 나누어 총 세 번 굴립니다.</p>
+                
                 <div className="form-grid three-up">
                   {[0, 1, 2].map((index) => {
                     const result = draft.backgroundRollResults[index]
                     const options = result ? backgroundChoiceOptions(result) : []
                     return (
                       <div key={index} className="roll-card">
-                        <label>
-                          <span>주사위 {index + 1}</span>
-                          <select value={draft.backgroundRollTables[index] ?? 'learn'}
-                            onChange={(event) => updateBackgroundRollTable(index, event.target.value as BackgroundRollTable)}>
-                            <option value="growth">{tableDieLabel(activeBackground, 'growth')}</option>
-                            <option value="learn">{tableDieLabel(activeBackground, 'learn')}</option>
-                          </select>
-                        </label>
+                        <strong>주사위 {index + 1} · {draft.backgroundRollTables[index] === 'growth' ? '성장' : '학습'}</strong>
                         {result ? (
                           <>
                             <small className="roll-result">{`${result.table === 'growth' ? '성장' : '학습'} ${result.roll}: ${result.label}`}</small>
@@ -1029,8 +1095,7 @@ function App() {
           <section className="card creation-section" id="stage-class" aria-labelledby="class-title">
             <div className="card-header">
               <div>
-                <p className="step-label">03 / 나만의 길</p>
-                <h2 id="class-title">클래스·포커스·자유 기술</h2>
+                <h2 id="class-title">클래스 선택</h2>
               </div>
               <RulesLink topic="classes" />
             </div>
@@ -1039,7 +1104,6 @@ function App() {
               <strong>클래스 선택을 확인하세요</strong>
               <ul>{classValidation.issues.map((issue) => <li key={issue}>{ko(issue)}</li>)}</ul>
             </div>}
-            {fixedClassGrants.length > 0 && <p className="support-text">클래스의 고정 기술: {fixedClassGrants.map((grant) => skillLabel(grant.skillId)).join(', ')}.</p>}
             <div className="form-grid two-up class-choice-grid">
               {[0, 1].map((index) => {
                 const options = CLASSES.map((classOption) => ({
@@ -1068,9 +1132,13 @@ function App() {
                 </label>
                 {selectedClass && <div id={detailsId} className="class-choice-details">
                   <small className="focus-english-name" lang="en">{selectedClass.eng_name}</small>
-                  <p className="support-text">{selectedClass.can_be_full_class ? '순수·부분 클래스 선택 가능' : '부분 클래스 전용'}<br />
-                    주문 {selectedClass.spells ? '있음' : '없음'} · 클래스 기교 {selectedClass.arts ? '있음' : '없음'}
-                  </p>
+                  <div className="focus-granted-skills">
+                    {classGrants.filter((grant) => grant.classId === selectedClass.id && SKILL_BY_ID.has(grant.skillId) && (index === 0 || draft.classChoices[0] !== selectedClass.id)).map((grant) => <span className="focus-granted-skill" key={grant.key}>
+                      {SKILL_ICONS[grant.skillId] && <span className="material-symbols-outlined ui-icon" aria-hidden="true">{SKILL_ICONS[grant.skillId]}</span>}
+                      {SKILL_BY_ID.get(grant.skillId)?.name ?? nameFor(grant.skillId)} + 1
+                    </span>)}
+                  </div>
+
                 </div>}
                 {unavailable.length > 0 && <details className="spell-description" id={helpId}>
                   <summary>{index + 1}번째 클래스에서 선택할 수 없는 이유</summary>
@@ -1090,7 +1158,6 @@ function App() {
 
             {classSkillChoices.length > 0 && <section className="info-panel" aria-label="클래스 보너스 기술">
               <h3>클래스 보너스 기술 선택</h3>
-              <RulesLink topic="skills">기술 배정 규칙</RulesLink>
               <div className="form-grid two-up">
                 {classSkillChoices.map((grant) => <label key={grant.key}>
                   <span>{ko(grant.label)}</span>
@@ -1107,57 +1174,82 @@ function App() {
               </div>
             </section>}
 
-            <div className="form-grid">
-              <label>
-                <span>자유 기술 <RulesLink topic="skills" /></span>
-                <select value={draft.freeSkill} aria-label="자유 기술" aria-describedby="free-skill-feedback"
-                  aria-invalid={skillAllocation.issues.some((issue) => issue.key === 'free-skill')}
-                  onChange={(event) => updateDirectSkill('freeSkill', event.target.value)}>
-                  <option value="">자유 기술 선택</option>
-                  <SkillChoiceOptions options={skillOptions} allocation={skillAllocation} choiceKey="free-skill" />
-                </select>
-                <SkillChoiceFeedback allocation={skillAllocation} choiceKey="free-skill" />
-              </label>
-            </div>
+          </section>
 
+          <section className="card creation-section" id="stage-focus" aria-labelledby="focus-title">
+            <div className="card-header"><h2 id="focus-title">포커스 선택</h2><RulesLink topic="foci" /></div>
             <div>
-              <p className="subheading">포커스 선택권 ({selectedFocusInstances.length}/{focusLimit}){focusCreation.grantedInstances.length > 0 && ` · 자동 습득 ${focusCreation.grantedInstances.length}개`}</p>
-              <RulesLink topic="foci">포커스 선택 규칙</RulesLink>
-              <ul className="support-text" aria-label="포커스 선택권" aria-live="polite">
-                {focusCreation.allowances.counts.map((count) => <li key={count.type}>{FOCUS_ALLOWANCE_LABELS[count.type]}: {count.used}/{count.total}개 사용 / {count.remaining}개 남음</li>)}
-              </ul>
+              <div className="focus-allowance-overview" aria-label="포커스 선택권" aria-live="polite">
+                <p className="sr-only">포커스 선택권 ({selectedFocusInstances.length}/{focusLimit})</p>
+                <div className="focus-allowance-grid">
+                  {focusCreation.allowances.counts.map((count) => <div key={count.type} className={`focus-allowance-item${count.total === 0 ? ' is-unavailable' : ''}`}>
+                    <span>{FOCUS_ALLOWANCE_LABELS[count.type]}</span>
+                    <strong aria-label={`${count.used}개 사용, 총 ${count.total}개`}><span>{count.used}</span><small> / {count.total}</small></strong>
+                  </div>)}
+                </div>
+                <div className="focus-allowance-caption"><span>사용 / 전체 선택권</span>
+                  {focusCreation.grantedInstances.length > 0 && <span className="focus-auto-grants">자동 습득 {focusCreation.grantedInstances.length}개 · 선택권 소모 없음</span>}
+                </div>
+              </div>
               <FocusInstances instances={allFocusInstances} foci={FOCI} assignments={focusCreation.allowances.assignments}
                 ruleChoices={draft.focusRuleChoices} scores={backgroundAttributes.attributes} attributes={ATTRIBUTES}
-                onRemove={removeSelectedFocus} onRuleChoice={updateFocusRuleChoice} />
-              {focusCreation.issues.length + artFocusIssues.length > 0 && <ul className="issue-list" role="status">{[...focusCreation.issues, ...artFocusIssues].map((issue) => <li key={issue}>{ko(issue)}</li>)}</ul>}
-              <div className="focus-bonus-list">
-                {localFocusBonuses.details.map((detail) => {
-                  const instance = draft.focusInstances.find((item) => item.instanceId === detail.focusId)
+                onRemove={removeSelectedFocus} onRuleChoice={updateFocusRuleChoice} onScoreRoll={rollFocusScore} onScoreTransfers={updateScoreTransfers}
+                renderEffects={(instance) => {
+                  const detail = localFocusBonuses.details.find((item) => item.focusId === instance.instanceId)
+                  if (!detail || !(detail.skills.length || detail.modifierChanges.length || detail.capOverrides.length)) return null
+                  return <aside className="focus-effects-box" aria-label="획득 효과">
+                      {detail.skills.length > 0 && <p className="focus-granted-skills">{detail.skills.map((id, index) => <span className="focus-granted-skill" key={`${id}-${index}`}>
+                        {SKILL_ICONS[id] && <span className="material-symbols-outlined ui-icon" aria-hidden="true">{SKILL_ICONS[id]}</span>}
+                        {SKILL_BY_ID.get(id)?.name ?? nameFor(id)} +1
+                      </span>)}</p>}
+                      {detail.modifierChanges.length > 0 && <div className="focus-modifier-effects">
+                        {detail.modifierChanges.map((change, index) => <span key={`${change.id}-${index}`} className={`focus-modifier-effect ${change.value < 0 ? 'is-negative' : 'is-positive'}`}>
+                          {nameFor(change.id)} 수정치 <strong>{plusModifier(change.value)}</strong>
+                        </span>)}
+                        <span className="modifier-info" tabIndex={0} role="img" aria-label="최종 한계 적용 전의 수정치 보정입니다." title="최종 한계 적용 전의 수정치 보정입니다.">
+                          <span className="material-symbols-outlined ui-icon" aria-hidden="true">info</span>
+                          <span className="modifier-tooltip" aria-hidden="true">최종 한계 적용 전의 수정치 보정입니다.</span>
+                        </span>
+                      </div>}
+                      {detail.capOverrides.map((cap, index) => {
+                        const kind = cap.min !== undefined && cap.max !== undefined ? '범위' : cap.max !== undefined ? '상한' : '하한'
+                        const value = cap.min !== undefined && cap.max !== undefined
+                          ? `${plusModifier(cap.min)} ~ ${plusModifier(cap.max)}` : plusModifier(cap.max ?? cap.min ?? 0)
+                        const explanation = `수정치를 더하는 효과가 아니라, ${nameFor(cap.id)} 수정치의 ${kind}: ${value}로 변경됩니다.`
+                        return <div className="focus-cap-effect" key={`${cap.id}-${index}`}>
+                          <span>{nameFor(cap.id)} 수정치 {kind} <strong>{value}</strong></span>
+                          <span className="modifier-info" tabIndex={0} role="img" aria-label={explanation} title={explanation}>
+                            <span className="material-symbols-outlined ui-icon" aria-hidden="true">info</span>
+                            <span className="modifier-tooltip" aria-hidden="true">{explanation}</span>
+                          </span>
+                        </div>
+                      })}
+                  </aside>
+                }}
+                renderAdditional={(instance) => {
+                  const detail = localFocusBonuses.details.find((item) => item.focusId === instance.instanceId)
+                  if (!detail) return null
                   const focus = instance && FOCUS_BY_ID.get(instance.focusId)
                   if (!focus || !instance) return null
                   const instanceLabel = focusInstanceLabel(instance, draft.focusInstances, FOCI)
                   return (
-                    <section key={instance.instanceId} className="info-panel focus-bonus-panel" aria-label={`${instanceLabel} 보너스`}>
-                      <h4>{instanceLabel}: 보너스</h4>
-                      {focus.bonus.length === 0 && !detail.skills.length && !detail.modifierChanges.length && !detail.capOverrides.length && <p className="support-text">기술·수정치 보정 없음</p>}
-                      {detail.skills.length > 0 && <p>기술 배정 (레벨은 시트 참고): {detail.skills.map(skillLabel).join(', ')}</p>}
-                      {detail.modifierChanges.length > 0 && <p>수정치 보정 (최종 한계 적용 전): {detail.modifierChanges.map((change) => `${nameFor(change.id)} ${plusModifier(change.value)}`).join(', ')}</p>}
-                      {detail.capOverrides.length > 0 && <p>수정치 한계 변경: {detail.capOverrides.map((cap) => `${nameFor(cap.id)} ${ko(modifierLimitText({ action: 'attribute_modifier', cap_override: cap }))}`).join('; ')}. 수정치 보너스가 아니라 최종 한계값입니다.</p>}
+                    <div className="focus-extra-choices">
                       {detail.manualReview.length > 0 && <div className="skill-review">
                         <strong>수동으로 적용할 규칙</strong>
                         <ul>{detail.manualReview.map((note) => <li key={note}>{ko(note)}</li>)}</ul>
                       </div>}
                       {detail.issues.length > 0 && <ul className="issue-list" role="status">{detail.issues.map((issue) => <li key={issue}>{ko(issue)}</li>)}</ul>}
-                      {detail.choices.map((choice) => {
+                      {detail.choices.some((choice) => !choice.selected) && <p className="focus-choice-pending">추가 선택 필요</p>}
+                      <div className="form-grid two-up">{detail.choices.map((choice) => {
                         const selected = draft.focusBonusChoices?.[instance.instanceId]?.[String(choice.bonusIndex)]?.[choice.slotIndex] ?? ''
-                        const label = choice.kind === 'skill' ? '보너스 기술' : focus.bonus[choice.bonusIndex].value === undefined ? '수정치 한계' : `능력치 수정치 ${plusModifier(choice.value)}`
+                        const label = choice.kind === 'skill' ? '추가로 배울 기술' : focus.bonus[choice.bonusIndex].value === undefined ? '수정치 한계' : `능력치 수정치 ${plusModifier(choice.value)}`
                         const otherChoices = (draft.focusBonusChoices[instance.instanceId]?.[String(choice.bonusIndex)] ?? []).filter((_, index) => index !== choice.slotIndex)
                         if (focus.unique_skill && choice.kind === 'skill') otherChoices.push(...draft.focusInstances
                           .filter((item) => item.focusId === focus.id && item.instanceId !== instance.instanceId)
                           .flatMap((item) => draft.focusBonusChoices[item.instanceId]?.['0'] ?? []))
                         return (
                           <label key={`${choice.bonusIndex}-${choice.slotIndex}`}>
-                            <span>{label} (보너스 {choice.bonusIndex + 1}, 선택 {choice.slotIndex + 1})</span>
+                            <span>{label}</span>
                             <select aria-label={`${instanceLabel}: ${label}, 선택 ${choice.slotIndex + 1}`}
                               aria-describedby={choice.kind === 'skill' ? `focus:${instance.instanceId}:${choice.bonusIndex}:${choice.slotIndex}-feedback` : undefined}
                               aria-invalid={!choice.selected}
@@ -1168,6 +1260,8 @@ function App() {
                                 options={choice.options.map((id) => ({ id, label: skillLabel(id) }))}
                                 excludedIds={otherChoices}
                                 excludedReason={focus.unique_skill ? '다른 항목에서 이미 선택한 기술입니다. 다른 기술을 고르세요' : undefined}
+                                allocationForOption={focus.skill_focus_grant || (focus.unique_skill && focusCreation.grantedInstances.some((grant) => grant.boundSkillId))
+                                  ? (id) => prospectiveFocusSkillAllocation(draft, instance.instanceId, choice.bonusIndex, choice.slotIndex, id) : undefined}
                                 allocation={skillAllocation} choiceKey={`focus:${instance.instanceId}:${choice.bonusIndex}:${choice.slotIndex}`} />
                                 : choice.options.map((id) => (
                                   <option key={id} value={id} disabled={otherChoices.includes(id)}>{nameFor(id)}{otherChoices.includes(id) ? ' - 이 보너스에서 이미 선택함' : ''}</option>
@@ -1178,14 +1272,34 @@ function App() {
                               choiceKey={`focus:${instance.instanceId}:${choice.bonusIndex}:${choice.slotIndex}`} />}
                           </label>
                         )
-                      })}
-                    </section>
+                      })}</div>
+                    </div>
                   )
-                })}
-              </div>
+                }} />
+              {focusCreation.issues.length + artFocusIssues.length > 0 && <ul className="issue-list" role="status">{[...focusCreation.issues, ...artFocusIssues].map((issue) => <li key={issue}>{ko(issue)}</li>)}</ul>}
               <FocusPicker foci={FOCI} classes={CLASSES} selectedClasses={selectedClasses}
                 instances={selectedFocusInstances} budget={focusBudgetForProgression(activeProgression)} grants={focusCreation.grantedInstances}
                 selectedIds={selectedFocusInstances.map((item) => item.focusId)} limit={focusLimit} skills={SKILLS} attributes={ATTRIBUTES} abilities={ABILITIES} onToggle={toggleFocus} />
+            </div>
+
+          </section>
+
+          <section className="card creation-section" id="stage-free-skill" aria-labelledby="free-skill-title">
+            <div className="card-header"><h2 id="free-skill-title">자유 기술 선택</h2><RulesLink topic="skills" /></div>
+            <div className="form-grid two-up free-skill-layout">
+              <label>
+                <select value={draft.freeSkill} aria-label="자유 기술" aria-describedby="free-skill-feedback"
+                  aria-invalid={skillAllocation.issues.some((issue) => issue.key === 'free-skill')}
+                  onChange={(event) => updateDirectSkill('freeSkill', event.target.value)}>
+                  <option value="">자유 기술 선택</option>
+                  <SkillChoiceOptions options={skillOptions} allocation={skillAllocation} choiceKey="free-skill" />
+                </select>
+                <SkillChoiceFeedback allocation={skillAllocation} choiceKey="free-skill" />
+              </label>
+              {SKILL_BY_ID.has(draft.freeSkill) && <div className="free-skill-summary" role="status" aria-label="선택한 자유 기술">
+                {SKILL_ICONS[draft.freeSkill] && <span className="material-symbols-outlined ui-icon" aria-hidden="true">{SKILL_ICONS[draft.freeSkill]}</span>}
+                <span>{SKILL_BY_ID.get(draft.freeSkill)?.name} + 1</span>
+              </div>}
             </div>
 
           </section>
@@ -1195,10 +1309,12 @@ function App() {
           <EquipmentInventory evaluation={equipmentInventory} purchases={draft.equipmentPurchases} loadout={draft.equipmentLoadout}
             equipment={EQUIPMENT} properties={EQUIPMENT_PROPERTIES} onPurchase={updateEquipmentPurchase}
             onLoadout={(equipmentLoadout) => setDraft((current) => ({ ...current, equipmentLoadout }))} />
+          <ArtPicker plans={artPlans} choices={artEvaluation.selected} notice={artNotice} onToggle={toggleArt} />
+          <SpellPicker classIds={draft.classChoices} classes={CLASSES} spells={FIRST_LEVEL_SPELLS}
+            choices={draft.spellChoicesByClassSlot} traditions={focusTraditions} notice={spellNotice} onToggle={toggleSpell} />
           <section className="card creation-section" id="stage-identity" aria-labelledby="identity-title">
             <div className="card-header">
               <div>
-                <p className="step-label">05 / 인물의 이야기</p>
                 <h2 id="identity-title">이름과 목표</h2>
               </div>
             </div>
@@ -1220,9 +1336,6 @@ function App() {
             </label>
 
           </section>
-          <ArtPicker plans={artPlans} choices={artEvaluation.selected} notice={artNotice} onToggle={toggleArt} />
-          <SpellPicker classIds={draft.classChoices} classes={CLASSES} spells={FIRST_LEVEL_SPELLS}
-            choices={draft.spellChoicesByClassSlot} traditions={focusTraditions} notice={spellNotice} onToggle={toggleSpell} />
           {(evaluationError || !evaluationCurrent || evaluation.issues.length > 0) && <section className="card creation-validation" aria-label="선택 확인" role="status">
             <h2>선택 확인</h2>
             {evaluationError ? <p className="warning-text">{evaluationError}</p>
@@ -1230,12 +1343,12 @@ function App() {
               : <ul className="issue-list">{evaluation.issues.map((issue) => <li key={issue}>{ko(issue)}</li>)}</ul>}
           </section>}
           <div className="draft-actions">
-            <div><strong>선택은 이 브라우저에 자동 저장됩니다.</strong><p className="support-text">다른 기기나 브라우저와는 공유되지 않습니다.</p></div>
+            <p className="support-text">이 브라우저에 자동 저장 · 기기 간 공유 안 됨</p>
             <div className="button-row">
-              <button type="button" onClick={restoreSavedDraft}>저장된 캐릭터 불러오기</button>
+              <button type="button" onClick={restoreSavedDraft}><span className="material-symbols-outlined ui-icon" aria-hidden="true">folder_open</span>저장된 캐릭터 불러오기</button>
               <button type="button" className="danger-button" onClick={() => {
                 if (window.confirm('저장된 캐릭터와 현재 선택을 모두 초기화할까요? 이 작업은 되돌릴 수 없습니다.')) clearDraft()
-              }}>캐릭터 초기화</button>
+              }}><span className="material-symbols-outlined ui-icon" aria-hidden="true">restart_alt</span>캐릭터 초기화</button>
             </div>
           </div>
         </div>

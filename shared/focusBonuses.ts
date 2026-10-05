@@ -42,9 +42,12 @@ export type FocusData = {
       selection?: { kind: 'background'; count: 1 };
     }>;
   };
+  skill_focus_grant?: { focus_id: string; bonus_index: number; skill_allotments: 1 };
   unique_skill?: boolean;
   extra_focus_picks?: number;
-  base_ac?: { base: number; level_divisor: number; rounding: 'up'; armor_rule: 'higher' };
+  base_ac?: { base: number; armor_rule: 'higher'; better_armor_bonus?: number } & (
+    { level_divisor: number; rounding: 'up' } | { level_divisor?: never; rounding?: never }
+  );
   tradition_choice?: {
     class_id: 'invoker'; options: string[]; effort: { skill_id: string; minimum: number };
   };
@@ -53,9 +56,12 @@ export type FocusData = {
     options: Array<{ id: string; name: string; description: string; bonus: FocusBonus[] }>;
   };
   score_effect?: { kind: 'raise_to'; value: number; tags: string[]; optional: boolean } |
-    { kind: 'cap_except_one'; value: number };
+    { kind: 'cap_except_one'; value: number } |
+    { kind: 'threshold_replace'; attribute_id: string; threshold: number; below: number; at_or_above: number } |
+    { kind: 'reroll'; attribute_id: string; sides: number; bonus: number } |
+    { kind: 'redistribute'; target: number };
   derived_bonus?: { base_attack_bonus?: number; attack?: number; saves?: SaveModifiers;
-    encumbrance_str?: number; system_strain_max?: number };
+    movement_speed?: number; initiative?: number; encumbrance_str?: number; system_strain_max?: number; hit_points_per_level?: number; hit_die_penalty?: number };
   conditional_saves?: ConditionalSaveModifier[];
   sheet_notes?: string[];
 };

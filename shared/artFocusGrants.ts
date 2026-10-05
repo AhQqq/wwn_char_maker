@@ -4,13 +4,14 @@ import { evaluateClassChoices } from './classSelection.js';
 import { focusCreationLevelReason, focusRequirementMet } from './focusBonuses.js';
 import type { FocusData } from './focusBonuses.js';
 
-export type ArtFocusSource = { kind: 'art'; classId: string; artId: string; name: string };
-export type ArtFocusGrant = { instanceId: string; focusId: string; grantedBy: ArtFocusSource[] };
+export type FocusGrantSource = { kind: 'art'; classId: string; artId: string; name: string } |
+  { kind: 'focus'; instanceId: string; focusId: string; name: string; skillId: string };
+export type FocusGrant = { instanceId: string; focusId: string; grantedBy: FocusGrantSource[]; boundSkillId?: string };
 
 // Resolve native class arts first. Borrowed traditions must not create a focus -> art -> focus cycle.
 export function resolveArtFocusGrants(choices: unknown, classIds: unknown, classes: ArtClass[], rules: StartingArts,
   arts: ArtOption[], foci: FocusData[]) {
-  const grants: ArtFocusGrant[] = [];
+  const grants: FocusGrant[] = [];
   const issues: string[] = [];
   const classSelection = evaluateClassChoices(classIds, classes);
   if (!classSelection.complete) return { grants, issues };
@@ -52,6 +53,6 @@ export function resolveArtFocusGrants(choices: unknown, classIds: unknown, class
   return { grants, issues };
 }
 
-export function refundGrantedFocusPicks<T extends { focusId: string; parentInstanceId?: string }>(instances: T[], grants: ArtFocusGrant[]) {
-  return instances.filter((instance) => instance.parentInstanceId || !grants.some((grant) => grant.focusId === instance.focusId));
+export function refundGrantedFocusPicks<T extends { focusId: string; parentInstanceId?: string }>(instances: T[], grants: FocusGrant[]) {
+  return instances.filter((instance) => instance.parentInstanceId || !grants.some((grant) => !grant.boundSkillId && grant.focusId === instance.focusId));
 }

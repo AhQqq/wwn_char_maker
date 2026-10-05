@@ -3,11 +3,14 @@ import { useEffect, useState } from 'react'
 const STAGES = [
   { id: 'stage-attributes', label: '능력치', keys: ['attributes'] },
   { id: 'stage-background', label: '배경', keys: ['background'] },
-  { id: 'stage-class', label: '클래스·포커스', keys: ['class', 'freeSkill'] },
+  { id: 'stage-class', label: '클래스', keys: ['classChoice'] },
+  { id: 'stage-focus', label: '포커스', keys: ['focusChoice'] },
+  { id: 'stage-free-skill', label: '자유 기술', keys: ['freeSkill'] },
   { id: 'stage-equipment', label: '장비', keys: ['equipment', 'armorClass'] },
   { id: 'stage-identity', label: '인물 정보', keys: ['identity', 'combat'] },
   { id: 'stage-arts', label: '기교', keys: ['arts'] },
   { id: 'stage-spells', label: '주문', keys: ['spells'] },
+  { id: 'stage-identity', label: '인물 정보', keys: ['identity', 'combat'] },
 ]
 
 export function CreationNavigation({ steps, ready, offline }: {

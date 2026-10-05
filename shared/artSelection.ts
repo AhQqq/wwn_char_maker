@@ -2,7 +2,7 @@ import { evaluateClassChoices } from './classSelection.js'
 import type { SelectableClass } from './classSelection.js'
 import type { FocusTraditionGrant } from './focusTraditions.js'
 
-export type ArtOption = { id: string; name: string; eng_name: string; class_id: string; description: string; focus_grants?: string[] }
+export type ArtOption = { id: string; name: string; eng_name: string; class_id: string; description: string; minimum_hit_dice?: string; unarmored_base_ac?: number; focus_grants?: string[] }
 export type ArtClass = SelectableClass & { arts: boolean }
 export type ArtGroup = { id?: string; label?: string; choose: number; options: string[]; exclusive?: boolean }
 export type ArtRule = { fixed: string[]; choose: number; choice_groups: ArtGroup[] }

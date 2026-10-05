@@ -18,10 +18,10 @@ const mage = classes.filter((option) => option.id === "high");
 const focus = (id: string) => foci.find((item) => item.id === id)!;
 const savedInstances = (ids: string[]) => readFocusInstances(undefined, ids, foci).instances;
 
-test("all 153 options remain in 102 stable families, including locked levels and classes", () => {
+test("all 155 options remain in 103 stable families, including locked levels and classes", () => {
   const families = buildFocusFamilies(foci);
-  assert.equal(families.length, 102);
-  assert.equal(families.filter((family) => family.levels.length === 2).length, 51);
+  assert.equal(families.length, 103);
+  assert.equal(families.filter((family) => family.levels.length === 2).length, 52);
   assert.deepEqual(families.flatMap((family) => family.levels.map((item) => item.id)).sort(), foci.map((item) => item.id).sort());
   assert.equal(new Set(families.map((family) => family.category)).size, 9);
   assert.ok(families.some((family) => family.id === "divination1"));

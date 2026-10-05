@@ -9,7 +9,8 @@ export type EquipmentLoadout = { armorId: string; shieldId: string; weaponId: st
 export type OwnedEquipment = GrantedEquipment & { packageCount: number; purchasedCount: number };
 export type ArmorClassEvaluation = {
   value: number | null; complete: boolean; base: number | null; shieldBonus: number;
-  baseSource: { kind: 'armor' | 'shield' | 'focus'; id: string; name: string; instanceId?: string } | null;
+  baseSource: { kind: 'armor' | 'shield' | 'focus' | 'art'; id: string; name: string; instanceId?: string;
+    armorBonus?: { instanceId: string; focusId: string; name: string; value: number } } | null;
   focusBases: FocusBaseAcSource[];
   dexterity: number; armor: EquipmentDefinition | null; shield: EquipmentDefinition | null;
   weapon: EquipmentDefinition | null; skillPenalties: { sneak: number; exert: number };
@@ -187,10 +188,22 @@ export function evaluateEquipmentLoadout(loadout: EquipmentLoadout, items: Owned
   if (complete && armor && armorData) {
     base = armorData.baseAc;
     baseSource = { kind: 'armor', id: armor.id, name: armor.name };
-    // Alternative base AC replaces weaker armor, never adds to it. Keep worn-armor penalties.
-    for (const source of focusBases) if (source.baseAc >= base) {
-      base = source.baseAc;
-      baseSource = { kind: 'focus', id: source.focusId, name: source.name, instanceId: source.instanceId };
+    // Each focus competes with the original armor base, not another focus's result.
+    // A better-armor bonus belongs only to its armor candidate and never stacks.
+    for (const source of focusBases) {
+      if (source.requiresUnarmored && (armor.id !== 'unarmored' || shield)) continue;
+      const improvesArmor = armor.id !== 'unarmored' && armorData.baseAc > source.baseAc && source.betterArmorBonus !== undefined;
+      const candidate = improvesArmor ? armorData.baseAc + source.betterArmorBonus! : source.baseAc;
+      if (!Number.isSafeInteger(candidate)) {
+        issues.push('The equipped armor has invalid AC or skill penalty data.');
+        continue;
+      }
+      if (candidate < base) continue;
+      base = candidate;
+      baseSource = improvesArmor
+        ? { kind: 'armor', id: armor.id, name: armor.name, armorBonus: {
+          instanceId: source.instanceId, focusId: source.focusId, name: source.name, value: source.betterArmorBonus! } }
+        : { kind: source.sourceKind ?? 'focus', id: source.focusId, name: source.name, instanceId: source.instanceId };
     }
     if (shield && shieldData) {
       if (shieldData.baseAc > base) {
@@ -199,10 +212,11 @@ export function evaluateEquipmentLoadout(loadout: EquipmentLoadout, items: Owned
       } else shieldBonus = shieldData.armorBonus;
     }
   }
+  if (issues.length) { base = null; baseSource = null; shieldBonus = 0; }
   return {
     value: base === null ? null : base + shieldBonus + dexterity,
-    complete, base, baseSource, focusBases, shieldBonus, dexterity, armor, shield, weapon,
-    skillPenalties: complete && armorData ? { ...armorData.skillPenalties } : { sneak: 0, exert: 0 }, issues,
+    complete: issues.length === 0, base, baseSource, focusBases, shieldBonus, dexterity, armor, shield, weapon,
+    skillPenalties: issues.length === 0 && armorData ? { ...armorData.skillPenalties } : { sneak: 0, exert: 0 }, issues,
   };
 }
 

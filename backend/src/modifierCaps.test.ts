@@ -92,6 +92,7 @@ test('Developed Attribute uses the expert pick and raises DEX to +3 after backgr
 test('all migrated cap metadata preserves bonuses and choices without legacy fields', () => {
   const expected = {
     automatons1: { 0: { min: -2 } },
+    chattel1: { 1: { max: 3 } },
     laborer1: { 1: { min: -2 }, 2: { min: -2 }, 3: { min: -2 }, 4: { max: 3 }, 5: { max: 3 } },
     penal1: { 0: { min: -3 } },
     warlike1: { 2: { max: 3 }, 3: { min: -2 } },

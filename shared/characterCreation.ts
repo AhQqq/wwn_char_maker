@@ -12,7 +12,8 @@ import { mergeAbilityEvaluations } from './abilities.js';
 import { evaluateEquipmentInventory } from './equipment.js';
 import { evaluateHitDiceEffects, firstLevelHitPoints, parseHitDice } from './abilityEffects.js';
 import { evaluateFocusEffort } from './focusTraditions.js';
-import type { evaluateClassChoices } from './classSelection.js';
+import { evaluateClassChoices } from './classSelection.js';
+import { evaluateArtDefenses } from './artDefenses.js';
 
 // Submitted choices remain untrusted. Normalization for editing is a caller concern.
 export type CharacterInput = BackgroundDraft & AttributeDraft & {
@@ -55,6 +56,7 @@ export function evaluateCreationCore(draft: CharacterInput, data: CharacterData,
   const artFocusGrants = resolveArtFocusGrants(draft.artChoicesByClass, draft.classChoices, CLASSES, STARTING_ARTS, ARTS, FOCI);
   const focusCreation = evaluateFocusCreation({ instances: draft.focusInstances, legacyIds: draft.focus, grants: artFocusGrants.grants,
     bonusChoices: draft.focusBonusChoices, ruleChoices: draft.focusRuleChoices, foci: FOCI, classes: context.classes,
+    allowSkillFocusGrants: evaluateClassChoices(draft.classChoices, CLASSES).complete,
     baseLimit: progression?.focus ?? [], skills: SKILLS, attributes: ATTRIBUTES, scores: backgroundAttributes.attributes });
   const skillAllocation = evaluateCreationSkills(backgroundEvaluation.skillGrants, context.classes,
     focusCreation.bonuses.skillGrants, draft.freeSkill ?? '', SKILLS.map((skill) => skill.id), draft.classBonusChoices);
@@ -77,17 +79,45 @@ export function evaluateCreationEffects(draft: CharacterInput, data: CharacterDa
     modifiers[key] += focusCreation.bonuses.modifierBonuses[key] ?? 0;
   }
   const savingThrows = calculateSavingThrows(modifiers, focusCreation.saveEffects);
+  const abilityHitDice = evaluateHitDiceEffects(progression?.hd ?? '', draft.classChoices, CLASSES, abilitySelection.abilities);
+  const artDefenses = evaluateArtDefenses(draft, data, classEvaluation.ids, classEvaluation.complete, abilityHitDice.hitDice);
+  const hitDiceEvaluation = { ...abilityHitDice, hitDice: abilityHitDice.complete ? artDefenses.hitDice : abilityHitDice.hitDice,
+    adjustments: [...abilityHitDice.adjustments, ...(abilityHitDice.complete ? artDefenses.adjustments : [])],
+    issues: [...abilityHitDice.issues, ...artDefenses.issues], complete: abilityHitDice.complete && artDefenses.issues.length === 0 };
+  const defenseBases = { ...focusCreation.baseAc, sources: [...focusCreation.baseAc.sources, ...artDefenses.sources],
+    issues: [...focusCreation.baseAc.issues, ...artDefenses.issues], complete: focusCreation.baseAc.complete && artDefenses.issues.length === 0 };
   const equipmentInventory = evaluateEquipmentInventory({ startingEquipment: draft.startingEquipment,
     purchases: draft.equipmentPurchases, loadout: draft.equipmentLoadout, dexterity: modifiers.DEX },
-    STARTING_EQUIPMENT, EQUIPMENT, EQUIPMENT_PROPERTIES, classEvaluation.complete ? focusCreation.baseAc : undefined);
-  const hitDiceEvaluation = evaluateHitDiceEffects(progression?.hd ?? '', draft.classChoices, CLASSES, abilitySelection.abilities);
+    STARTING_EQUIPMENT, EQUIPMENT, EQUIPMENT_PROPERTIES, classEvaluation.complete ? defenseBases : undefined);
+
+  // Focus penalties affect the resolved die result, after class/art HD floors.
+  if (hitDiceEvaluation.complete && classEvaluation.complete) for (const penalty of focusCreation.derived.hitDiePenalties) {
+    const dice = parseHitDice(hitDiceEvaluation.hitDice);
+    if (!dice) continue;
+    const flat = dice.flat + penalty.value;
+    const adjusted = `${dice.count}d${dice.sides}${flat > 0 ? '+' : ''}${flat || ''}`;
+    hitDiceEvaluation.adjustments.push({ abilityId: penalty.focusId, name: penalty.name,
+      englishName: penalty.name,
+      from: hitDiceEvaluation.hitDice, to: adjusted });
+    hitDiceEvaluation.hitDice = adjusted;
+  }
   const hitDice = hitDiceEvaluation.hitDice;
   const hitDie = parseHitDice(hitDice)?.sides ?? 0;
-  const hitPoints = firstLevelHitPoints(hitDice, modifiers.CON);
+  const focusHitPointsBonus = classEvaluation.complete ? focusCreation.derived.hitPointsBonus : 0;
+  const hitPoints = firstLevelHitPoints(hitDice, modifiers.CON, focusHitPointsBonus);
+  const hitDiceMaximum = parseHitDice(hitDice)?.maximum ?? 0;
+  const hitPointBreakdown = { hitDiceMaximum, constitutionModifier: modifiers.CON, focusBonus: focusHitPointsBonus,
+    sources: classEvaluation.complete ? focusCreation.derived.hitPointAdjustments : [],
+    minimumAdjustment: hitPoints - (hitDiceMaximum + modifiers.CON + focusHitPointsBonus) };
   const progressionAttackBonus = Number((progression?.ab ?? '').replace('+', '')) || 0;
   const baseAttackBonus = progressionAttackBonus + focusCreation.derived.baseAttackBonusAdjustment;
+  const movementSpeed = 30 + (classEvaluation.complete ? focusCreation.derived.movementSpeedBonus : 0);
+  const initiative = modifiers.DEX + (classEvaluation.complete ? focusCreation.derived.initiativeBonus : 0);
+  // Creation starts at zero strain; the maximum uses the final score, not its modifier.
+  const systemStrain = { current: 0, maximum: focusCreation.scores.CON +
+    (classEvaluation.complete ? focusCreation.derived.systemStrainMaxBonus : 0) };
   const focusTraditions = classEvaluation.complete ? focusCreation.traditions : [];
   const focusEffort = evaluateFocusEffort(focusTraditions, skillAllocation.states);
   return { classAbilities, focusAbilities, abilitySelection, baseModifiers, modifiers, savingThrows, equipmentInventory,
-    hitDiceEvaluation, hitDice, hitDie, hitPoints, progressionAttackBonus, baseAttackBonus, focusTraditions, focusEffort };
+    hitDiceEvaluation, hitDice, hitDie, hitPoints, hitPointBreakdown, progressionAttackBonus, baseAttackBonus, focusTraditions, focusEffort, movementSpeed, initiative, systemStrain };
 }

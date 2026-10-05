@@ -1,6 +1,7 @@
 [
   {
     "id": "martial_style",
+    "minimum_hit_dice": "1d6",
     "name": "무예",
     "eng_name": "Martial Style",
     "class_id": "vowed",
@@ -17,6 +18,7 @@
   },
   {
     "id": "unarmored_defense",
+    "unarmored_base_ac": 13,
     "name": "맨몸 방어술",
     "eng_name": "Unarmored Defense",
     "class_id": "vowed",

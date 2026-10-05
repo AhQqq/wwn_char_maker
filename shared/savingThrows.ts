@@ -1,10 +1,10 @@
-import type { ArtFocusSource } from './artFocusGrants.js';
+import type { FocusGrantSource } from './artFocusGrants.js';
 
 export const SAVE_IDS = ['physical', 'evasion', 'mental', 'luck'] as const;
 export type SaveId = typeof SAVE_IDS[number];
 export type SaveModifiers = Partial<Record<SaveId, number>>;
 export type ConditionalSaveModifier = { condition: string; saves: SaveModifiers; scope?: string };
-export type SaveSource = { instanceId: string; focusId: string; name: string; saves: SaveModifiers; grantedBy?: ArtFocusSource[] };
+export type SaveSource = { instanceId: string; focusId: string; name: string; saves: SaveModifiers; grantedBy?: FocusGrantSource[] };
 export type ConditionalSaveSource = SaveSource & ConditionalSaveModifier;
 export type FocusSaveEffects = { sources: SaveSource[]; conditional: ConditionalSaveSource[] };
 

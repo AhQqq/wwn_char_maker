@@ -4,7 +4,7 @@ import type { FocusBonus, FocusData } from '../../shared/focusBonuses.js'
 import type { FocusInstance } from '../../shared/focusCreation.js'
 import { evaluateFocusInstances } from '../../shared/focusCreation.js'
 import type { FocusBudget } from '../../shared/focusAllowances.js'
-import type { ArtFocusGrant, ArtFocusSource } from '../../shared/artFocusGrants.js'
+import type { FocusGrant, FocusGrantSource } from '../../shared/artFocusGrants.js'
 export type { FocusBonus } from '../../shared/focusBonuses.js'
 
 export type FocusOption = FocusData & {
@@ -24,8 +24,8 @@ export type FocusOption = FocusData & {
 export type FocusClass = { id: string; name: string; eng_name: string; archetype: string }
 export type FocusFamily = { id: string; category: string; levels: FocusOption[] }
 
-export function focusGrantLabel(sources: ArtFocusSource[]) {
-  return sources.map((source) => `${nameFor(source.classId)} → ${source.name}`).join(', ')
+export function focusGrantLabel(sources: FocusGrantSource[]) {
+  return sources.map((source) => source.kind === 'art' ? `${nameFor(source.classId)} → ${source.name}` : `${source.name} → ${nameFor(source.skillId)}`).join(', ')
 }
 
 export function focusInstanceLabel(instance: FocusInstance, instances: FocusInstance[], foci: FocusOption[]) {
@@ -88,11 +88,11 @@ export function focusLockReasons(focus: FocusOption, selected: string[], foci: F
   return reasons
 }
 
-export function focusInstanceLockReasons(focus: FocusOption, instances: FocusInstance[], foci: FocusOption[], selectedClasses: FocusClass[], classes: FocusClass[], budget: FocusBudget, grants: ArtFocusGrant[] = []) {
+export function focusInstanceLockReasons(focus: FocusOption, instances: FocusInstance[], foci: FocusOption[], selectedClasses: FocusClass[], classes: FocusClass[], budget: FocusBudget, grants: FocusGrant[] = []) {
   const levelReason = focusCreationLevelReason(focus)
   if (levelReason) return [levelReason]
   const grant = grants.find((item) => item.focusId === focus.id)
-  if (grant) return [`${focusGrantLabel(grant.grantedBy)}에서 자동 습득합니다. 선택권을 소모하지 않으며 중복 선택할 수 없습니다.`]
+  if (grant && !focus.repeatable) return [`${focusGrantLabel(grant.grantedBy)}에서 자동 습득합니다. 선택권을 소모하지 않으며 중복 선택할 수 없습니다.`]
   if (!focus.repeatable && instances.some((item) => item.focusId === focus.id)) return []
   const reasons = focusLockReasons(focus, [...instances, ...grants].map((item) => item.focusId), foci, selectedClasses, classes, Infinity)
   if (reasons.length) return reasons

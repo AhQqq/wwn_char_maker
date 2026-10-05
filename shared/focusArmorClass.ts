@@ -2,7 +2,7 @@ import { focusCreationLevelReason } from './focusBonuses.js';
 import type { FocusData } from './focusBonuses.js';
 import type { FocusInstance } from './focusCreation.js';
 
-export type FocusBaseAcSource = { instanceId: string; focusId: string; name: string; baseAc: number };
+export type FocusBaseAcSource = { instanceId: string; focusId: string; name: string; baseAc: number; betterArmorBonus?: number; sourceKind?: 'art'; requiresUnarmored?: boolean };
 export type FocusBaseAcEvaluation = { sources: FocusBaseAcSource[]; issues: string[]; complete: boolean };
 
 // Resolve only eligible, funded instances; saved totals are never a source of AC.
@@ -17,17 +17,20 @@ export function evaluateFocusBaseAc(applied: FocusInstance[], foci: FocusData[],
     if (!focus || focusCreationLevelReason(focus) || focus.base_ac === undefined) continue;
     const rule = focus.base_ac;
     if (!rule || !Number.isSafeInteger(rule.base) || rule.base < 0 ||
-        !Number.isSafeInteger(rule.level_divisor) || rule.level_divisor < 1 ||
-        rule.rounding !== 'up' || rule.armor_rule !== 'higher') {
+        (rule.level_divisor === undefined ? rule.rounding !== undefined :
+          !Number.isSafeInteger(rule.level_divisor) || rule.level_divisor < 1 || rule.rounding !== 'up') ||
+        rule.armor_rule !== 'higher' || (rule.better_armor_bonus !== undefined &&
+          (!Number.isSafeInteger(rule.better_armor_bonus) || rule.better_armor_bonus < 1))) {
       issues.push(`${focus.name}: invalid base AC rule in foci.json.`);
       continue;
     }
-    const baseAc = rule.base + Math.ceil(characterLevel / rule.level_divisor);
+    const baseAc = rule.base + (rule.level_divisor === undefined ? 0 : Math.ceil(characterLevel / rule.level_divisor));
     if (!Number.isSafeInteger(baseAc)) {
       issues.push(`${focus.name}: invalid base AC rule in foci.json.`);
       continue;
     }
-    sources.push({ instanceId: instance.instanceId, focusId: focus.id, name: focus.name, baseAc });
+    sources.push({ instanceId: instance.instanceId, focusId: focus.id, name: focus.name, baseAc,
+      ...(rule.better_armor_bonus === undefined ? {} : { betterArmorBonus: rule.better_armor_bonus }) });
   }
   return { sources, issues, complete: issues.length === 0 };
 }

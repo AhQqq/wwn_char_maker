@@ -15,8 +15,8 @@ export function parseHitDice(value: unknown) {
   return { count, sides, flat, maximum, expression: `${count}d${sides}${flat > 0 ? '+' : ''}${flat || ''}` };
 }
 
-export function firstLevelHitPoints(hitDice: string, constitutionModifier: number) {
-  return Math.max(1, (parseHitDice(hitDice)?.maximum ?? 0) + constitutionModifier);
+export function firstLevelHitPoints(hitDice: string, constitutionModifier: number, focusBonus = 0) {
+  return Math.max(1, (parseHitDice(hitDice)?.maximum ?? 0) + constitutionModifier + focusBonus);
 }
 
 const record = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === 'object' && !Array.isArray(value);

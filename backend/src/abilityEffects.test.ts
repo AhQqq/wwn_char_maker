@@ -53,6 +53,7 @@ test('every other legal ordered class pair retains its normal progression hit di
     const classChoices = [first.id, second.id];
     if (!evaluateClassChoices(classChoices, classes).complete) continue;
     if (classChoices.includes('warrior') && classChoices.includes('duelist')) continue;
+    if (classChoices.includes('vowed')) continue; // Covered by vowedDefenses.test.ts.
     const key = [first.archetype[0], second.archetype[0]].sort().join('+');
     const table = progression.find((row) => row.id === key || row.id === key.split('+').reverse().join('+'))!;
     const result = evaluateCharacter({ ...base(), classChoices });
