@@ -121,6 +121,10 @@ Use each class's `can_be_full_class` boolean in `classes.json` as the source of 
 
 The frontend and backend enforce this restriction through `shared/classSelection.ts`. The dropdowns keep partial-only options visible but disabled when already selected in the other slot. Older drafts with an illegal duplicate remain visibly flagged until the player chooses a different class; they cannot complete the class checkpoint.
 
+## Class Effort Pools
+
+Confirmed by the user on 2026-10-05: each class's Effort (분발) follows that class's own rules and remains a separate pool. Calculate and track each class's maximum, expenditure, commitment and recovery independently. A combined-class character never adds or merges different classes' Effort into a shared pool; one class's Effort cannot pay another class's costs.
+
 ## Class Pairing Restrictions
 
 - Mageslayer (`mageslayer`) cannot be paired with any class whose `archetype` is `mage`. This includes non-spellcasting mage-archetype classes such as Duelist and Healer, not just the four spellcasters.

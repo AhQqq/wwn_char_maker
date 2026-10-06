@@ -45,7 +45,8 @@ before(async () => {
 after(async () => { await server?.close() })
 
 const render = (props) => renderToStaticMarkup(createElement(CharacterSheet, props))
-const vitals = (html) => html.match(/<div class="sheet-vitals"[\s\S]*?<details/)[0]
+const withoutStatIcons = (html) => html.replace(/<span class="material-symbols-outlined sheet-stat-icon" aria-hidden="true">[^<]+<\/span>/g, '')
+const vitals = (html) => withoutStatIcons(html).match(/<div class="sheet-vitals"[\s\S]*?<details/)[0]
 
 test('sheet preserves its anchor, level, bilingual classes, skill icons and rule links', () => {
   const props = makeProps()
@@ -69,7 +70,7 @@ test('sheet displays supplied combat results without recalculating them from cho
   assert.match(vitals(html), /<span>HP<\/span><strong>123<\/strong>/)
   assert.match(vitals(html), /<span>AC<\/span><strong>77<\/strong>/)
   assert.match(vitals(html), /<span>공격 보너스<\/span><strong>\+42<\/strong>/)
-  assert.match(html, /정신 내성 목표값<\/span><strong>88<\/strong>/)
+  assert.match(withoutStatIcons(html), /정신 내성 목표값<\/span><strong>88<\/strong>/)
 })
 
 test('pending and offline states retain the existing placeholders and local AC fallback', () => {

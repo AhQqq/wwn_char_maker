@@ -72,13 +72,19 @@ export function CharacterSheet({
 
       <div className="sheet-scroll-content" tabIndex={0} role="region" aria-label="캐릭터 시트 상세">
       <section className="class-build-summary" data-archetype-first={firstArchetype} data-archetype-second={secondArchetype} aria-label="클래스 조합" aria-live="polite">
-        <p className="sheet-cover-label">레벨 1</p>
-        <p className="character-name" id="character-sheet-title">{character.name.trim() || '이름 없는 모험가'}</p>
-        <p className="sheet-background">{catalogues.BACKGROUNDS?.find((option) => option.id === character.background)?.name || '배경 미선택'}</p>
-        <h3>클래스 조합</h3>
-        <strong className="class-build-name">{ko(resolvedClassBuild)}</strong>
-        <p className="support-text">{[0, 1].map((slot) => CLASS_BY_ID.get(character.classChoices[slot])?.name ?? '미선택').join(' / ')}</p>
-        <p className="focus-english-name" lang="en">{[0, 1].map((slot) => CLASS_BY_ID.get(character.classChoices[slot])?.eng_name).filter(Boolean).join(' / ')}</p>
+        <div className="sheet-name-row">
+          <h2 className="character-name" id="character-sheet-title">{character.name.trim() || '이름 없는 모험가'}</h2>
+          <span className="sheet-level">레벨 1</span>
+        </div>
+        <div className="sheet-identity-line">
+          <span className="sheet-background">{catalogues.BACKGROUNDS?.find((option) => option.id === character.background)?.name || '배경 미선택'}</span>
+          <span className="sheet-identity-divider" aria-hidden="true">·</span>
+          <strong className="class-build-name">{ko(resolvedClassBuild)}</strong>
+        </div>
+        <div className="sheet-class-details">
+          <p className="support-text">{[0, 1].map((slot) => CLASS_BY_ID.get(character.classChoices[slot])?.name ?? '미선택').join(' / ')}</p>
+          <p className="focus-english-name" lang="en">{[0, 1].map((slot) => CLASS_BY_ID.get(character.classChoices[slot])?.eng_name).filter(Boolean).join(' / ')}</p>
+        </div>
       </section>
 
       <div className="sheet-tabs" role="tablist" aria-label="캐릭터 시트 페이지">
@@ -98,23 +104,23 @@ export function CharacterSheet({
       </div>
       <div className="sheet-tab-panel" role="tabpanel" id="sheet-panel-basic" aria-labelledby="sheet-tab-basic" hidden={activeTab !== 'basic'} tabIndex={0}>
       <div className="sheet-vitals" aria-label="주요 전투 수치" aria-busy={!evaluationCurrent && !evaluationError}>
-        <div><span>HP</span><strong>{evaluationCurrent ? evaluation.derived.hitPoints : '--'}</strong></div>
-        <div><span>AC</span><strong>{displayedAC ?? '미정'}</strong>
+        <div><span>HP</span><strong><span className="material-symbols-outlined sheet-stat-icon" aria-hidden="true">favorite</span>{evaluationCurrent ? evaluation.derived.hitPoints : '--'}</strong></div>
+        <div><span>AC</span><strong><span className="material-symbols-outlined sheet-stat-icon" aria-hidden="true">shield</span>{displayedAC ?? '미정'}</strong>
           {(displayedArmorClass.baseSource?.kind === 'focus' || displayedArmorClass.baseSource?.kind === 'art') && <small>{displayedArmorClass.baseSource.name}</small>}
           {displayedArmorClass.baseSource?.armorBonus && <small>{displayedArmorClass.baseSource.armorBonus.name} +{displayedArmorClass.baseSource.armorBonus.value}</small>}
         </div>
-        <div><span>공격 보너스</span><strong>{evaluationCurrent ? plusModifier(evaluation.derived.attackBonus) : '--'}</strong></div>
+        <div><span>공격 보너스</span><strong><span className="material-symbols-outlined sheet-stat-icon" aria-hidden="true">colorize</span>{evaluationCurrent ? plusModifier(evaluation.derived.attackBonus) : '--'}</strong></div>
       </div>
       <div className="sheet-secondary-vitals" aria-label="이동과 우선권 및 기관계 부담" aria-busy={!evaluationCurrent && !evaluationError}>
-        <div><span>이동 속도</span><strong>{evaluationCurrent ? `${evaluation.derived.movementSpeed} ft` : '--'}</strong></div>
-        <div><span>우선권</span><strong>{evaluationCurrent ? plusModifier(evaluation.derived.initiative) : '--'}</strong></div>
-        <div><span>기관계 부담</span><strong>{evaluationCurrent ? `${evaluation.derived.systemStrain.current} / ${evaluation.derived.systemStrain.maximum}` : '--'}</strong></div>
+        <div><span>이동 속도</span><strong><span className="material-symbols-outlined sheet-stat-icon" aria-hidden="true">steps</span>{evaluationCurrent ? `${evaluation.derived.movementSpeed} ft` : '--'}</strong></div>
+        <div><span>우선권</span><strong><span className="material-symbols-outlined sheet-stat-icon" aria-hidden="true">bolt</span>{evaluationCurrent ? plusModifier(evaluation.derived.initiative) : '--'}</strong></div>
+        <div><span>기관계 부담</span><strong><span className="material-symbols-outlined sheet-stat-icon" aria-hidden="true">health_metrics</span>{evaluationCurrent ? `${evaluation.derived.systemStrain.current} / ${evaluation.derived.systemStrain.maximum}` : '--'}</strong></div>
       </div>
       <div className="sheet-saves" aria-label="내성 굴림 목표값">
-        <div><span>육체 내성 목표값</span><strong>{displayedSaves.targets.physical}</strong></div>
-        <div><span>회피 내성 목표값</span><strong>{displayedSaves.targets.evasion}</strong></div>
-        <div><span>정신 내성 목표값</span><strong>{displayedSaves.targets.mental}</strong></div>
-        <div><span>행운 내성 목표값</span><strong>{displayedSaves.targets.luck}</strong></div>
+        <div><span>육체 내성 목표값</span><strong><span className="material-symbols-outlined sheet-stat-icon" aria-hidden="true">accessibility_new</span>{displayedSaves.targets.physical}</strong></div>
+        <div><span>회피 내성 목표값</span><strong><span className="material-symbols-outlined sheet-stat-icon" aria-hidden="true">sprint</span>{displayedSaves.targets.evasion}</strong></div>
+        <div><span>정신 내성 목표값</span><strong><span className="material-symbols-outlined sheet-stat-icon" aria-hidden="true">cognition</span>{displayedSaves.targets.mental}</strong></div>
+        <div><span>행운 내성 목표값</span><strong><span className="material-symbols-outlined sheet-stat-icon" aria-hidden="true">flare</span>{displayedSaves.targets.luck}</strong></div>
       </div>
       {(!evaluationCurrent || evaluationError) && <p className="sheet-update-notice" role="status">
         {evaluationError ? '서버 연결 필요' : '계산 중'}
