@@ -10,6 +10,20 @@ type Props = {
   onToggle: (classId: string, groupKey: string | null, id: string) => void
 }
 
+function ArtHeading({ art, selected = false }: { art: ArtOption; selected?: boolean }) {
+  return <div className="art-option-heading">
+    <div className="art-option-title">
+      <h5>{art.name}</h5>
+      <p className="focus-english-name">{art.eng_name}</p>
+    </div>
+    {selected && <span className="art-selected-check" aria-label="선택된 기교">
+      <svg viewBox="0 0 20 20" width="20" height="20" fill="none" aria-hidden="true">
+        <path d="m4 10 4 4 8-8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>}
+  </div>
+}
+
 function ArtDescription({ art }: { art: ArtOption }) {
   return <details className="spell-description">
     <summary>전체 설명 읽기</summary>
@@ -33,14 +47,16 @@ export function ArtPicker({ plans, choices, notice, onToggle }: Props) {
         {options.map((art) => {
           const picked = selected.includes(art.id)
           const reason = artChoiceReason(plan, current, key, art.id)
+          const statusText = picked || reason === 'All picks in this section are used. Remove an art to change your selection.'
+            ? '' : reason ? ko(reason) : ''
           const statusId = `art-${plan.classId}-${key ?? 'additional'}-${art.id}-status`
           return <article key={art.id} className={`spell-option art-option${picked ? ' is-learned' : ''}`} data-art-id={art.id}>
-            <h5>{art.name}</h5><p className="focus-english-name">{art.eng_name}</p>
+            <ArtHeading art={art} selected={picked} />
             <ArtDescription art={art} />
             <button type="button" className={`focus-level-button${picked ? ' selected' : ''}`}
-              aria-pressed={picked} aria-describedby={statusId} disabled={!picked && Boolean(reason)}
+              aria-pressed={picked} aria-describedby={statusText ? statusId : undefined} disabled={!picked && Boolean(reason)}
               onClick={() => onToggle(plan.classId, key, art.id)}>{picked ? '기교 해제' : '기교 선택'}</button>
-            <small className="focus-level-status" id={statusId}>{picked ? '선택됨' : reason ? ko(reason) : '선택할 수 있습니다.'}</small>
+            {statusText && <small className="focus-level-status" id={statusId}>{statusText}</small>}
           </article>
         })}
       </div>
@@ -74,8 +90,7 @@ export function ArtPicker({ plans, choices, notice, onToggle }: Props) {
             <div className="focus-grid">{plan.fixed.map((id) => {
               const art = plan.options.find((option) => option.id === id)!
               return <article key={id} className="spell-option art-option is-granted" data-art-id={id}>
-                <h5>{art.name}</h5><p className="focus-english-name">{art.eng_name}</p>
-                <span className="focus-state-badge">{plan.source || (plan.focusGrant && plan.choose === 0) ? '포커스로 자동 습득' : '클래스에서 자동 습득'} / 해제 불가</span>
+                <ArtHeading art={art} selected />
                 <ArtDescription art={art} />
               </article>
             })}</div>

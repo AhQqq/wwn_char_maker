@@ -238,7 +238,7 @@ export function evaluateFocusCreation(input: {
   const notes: Array<{ instanceId: string; text: string }> = [];
   const saveEffects: FocusSaveEffects = { sources: [], conditional: [] };
   const derived = { hitDiePenalties: [] as FocusHitPointAdjustment[], hitPointsBonus: 0, hitPointAdjustments: [] as FocusHitPointAdjustment[], baseAttackBonusAdjustment: 0, baseAttackAdjustments: [] as BaseAttackAdjustment[],
-    attack: 0, saves: { physical: 0, evasion: 0, mental: 0, luck: 0 }, movementSpeedBonus: 0, initiativeBonus: 0, encumbranceStrengthBonus: 0, systemStrainMaxBonus: 0 };
+    attack: 0, saves: { physical: 0, evasion: 0, mental: 0, luck: 0 }, movementSpeedBonus: 0, initiativeBonus: 0, reactionRollBonus: 0, encumbranceStrengthBonus: 0, systemStrainMaxBonus: 0 };
   const expanded = instanceFocusData(selection.applied, input.foci);
   // Keep submitted choice shapes intact for strict API validation; normalization is only a display preview.
   const choices: Record<string, unknown> = Object.fromEntries(selection.instances.map((item) => [item.instanceId, own(input.bonusChoices, item.instanceId)]));
@@ -311,7 +311,7 @@ export function evaluateFocusCreation(input: {
     }
     const extra = definition.derived_bonus;
     if (extra) {
-      const values = [extra.hit_die_penalty, extra.movement_speed, extra.initiative, extra.base_attack_bonus, extra.attack, extra.encumbrance_str, extra.system_strain_max, extra.hit_points_per_level, ...Object.values(extra.saves ?? {})];
+      const values = [extra.reaction_roll, extra.hit_die_penalty, extra.movement_speed, extra.initiative, extra.base_attack_bonus, extra.attack, extra.encumbrance_str, extra.system_strain_max, extra.hit_points_per_level, ...Object.values(extra.saves ?? {})];
       if (values.some((value) => value !== undefined && !Number.isSafeInteger(value)) ||
           (extra.hit_points_per_level !== undefined && extra.hit_points_per_level < 1) ||
           (extra.hit_die_penalty !== undefined && extra.hit_die_penalty < 1) ||
@@ -330,6 +330,7 @@ export function evaluateFocusCreation(input: {
         derived.attack += extra.attack ?? 0;
         derived.movementSpeedBonus += extra.movement_speed ?? 0;
         derived.initiativeBonus += extra.initiative ?? 0;
+        derived.reactionRollBonus += extra.reaction_roll ?? 0;
         derived.encumbranceStrengthBonus += extra.encumbrance_str ?? 0;
         derived.systemStrainMaxBonus += extra.system_strain_max ?? 0;
         if (extra.saves && Object.values(extra.saves).some(Boolean)) {

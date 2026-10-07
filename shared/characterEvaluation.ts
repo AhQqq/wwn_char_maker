@@ -20,7 +20,7 @@ export function evaluateCharacterWithData(draft: CharacterInput, data: Character
   const core = evaluateCreationCore(draft, data, { attributes: attributeEvaluation.attributes, classes: classChoices });
   const { progressionKey, progression, backgroundEvaluation, backgroundAttributes, artFocusGrants, focusCreation, skillAllocation } = core;
   const { classAbilities, focusAbilities, abilitySelection, baseModifiers, modifiers, savingThrows, equipmentInventory,
-    hitDiceEvaluation, hitDice, hitDie, hitPoints, hitPointBreakdown, progressionAttackBonus, baseAttackBonus, focusTraditions, focusEffort, movementSpeed, initiative, systemStrain } =
+    hitDiceEvaluation, hitDice, hitDie, hitPoints, hitPointBreakdown, progressionAttackBonus, baseAttackBonus, focusTraditions, focusEffort, movementSpeed, initiative, reactionRollModifier, systemStrain } =
     evaluateCreationEffects(draft, data, core, classEvaluation);
   const selectedFocus = focusCreation.instances;
   const focusLimit = focusCreation.limit;
@@ -160,7 +160,7 @@ export function evaluateCharacterWithData(draft: CharacterInput, data: Character
     focusBonuses: focusBonuses.details,
     modifiers,
     derived: {
-      movementSpeed, initiative, systemStrain,
+      movementSpeed, initiative, reactionRollModifier, systemStrain,
       hitPoints,
       hitPointBreakdown,
       hitDie,

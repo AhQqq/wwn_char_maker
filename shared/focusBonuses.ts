@@ -61,7 +61,7 @@ export type FocusData = {
     { kind: 'reroll'; attribute_id: string; sides: number; bonus: number } |
     { kind: 'redistribute'; target: number };
   derived_bonus?: { base_attack_bonus?: number; attack?: number; saves?: SaveModifiers;
-    movement_speed?: number; initiative?: number; encumbrance_str?: number; system_strain_max?: number; hit_points_per_level?: number; hit_die_penalty?: number };
+    movement_speed?: number; initiative?: number; reaction_roll?: number; encumbrance_str?: number; system_strain_max?: number; hit_points_per_level?: number; hit_die_penalty?: number };
   conditional_saves?: ConditionalSaveModifier[];
   sheet_notes?: string[];
 };

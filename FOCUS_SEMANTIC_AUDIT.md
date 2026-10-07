@@ -93,6 +93,7 @@ The following 21 retained items use their original review numbers. Current catal
 - **Name:** Optional 바람걸음 to make the title a noun; current wording is understandable.
 - **Observation:** R: Level 1 permits vertical travel but omits ceiling traversal, falls when unable to end safely, and whether a handhold merely ends a move or the whole turn. Level 2 already assigns jumping to a Move action; clarify whether the scene-limited Move action is additional and how general movement rules apply.
 - **Revision or ruling:** Use “자신의 턴이 끝날 때 서 있을 수 있는 수평면 또는 붙잡을 수 있는 지점에 도달해야 합니다.” Specify horizontal 20ft and vertical 10ft separately. Keep +10ft as a movement-speed increase, not an added free Move action.
+- **Manual Review:** Done
 
 ### 016 야생의 혀 / Wildtongue
 
@@ -103,6 +104,7 @@ The following 21 retained items use their original review numbers. Current catal
 - **Name:** Keep as imagery; 야생의 말 is a plainer alternative.
 - **Observation:** R: The local definition deliberately includes magical animals; avoid narrowing it to mundane beasts. Level 1's “즉각적인 행동” may describe a short request rather than a formal Instant action. Level 2 needs an action cost, visible-target selection, the save timing, and what happens when commands become dangerous.
 - **Revision or ruling:** Replace the casual action phrase with “그 자리에서 간단히 수행할 수 있는 부탁” if not a named action. State that only magical animals receive the listed Mental save, unless you intend otherwise. “하루에 한 번, 보이는 동물 한 마리에게 ... 한 장면 동안” preserves existing duration and target count.
+- **Manual Review:** Done
 
 ## Mystic Secrets
 
@@ -115,6 +117,7 @@ The following 21 retained items use their original review numbers. Current catal
 - **Name:** Keep; this text concerns future events specifically, so 예지술 is more precise than a generic 점술 label.
 - **Observation:** R: “첫 사용 후 일주일 내 재사용은 난이도를 +1” can mean cumulative +1 per use or one flat +1 for any repeat. Define the week/reset and what counts as the same question. The current text charges 1 System Strain on every use; do not invent a success-only exception.
 - **Revision or ruling:** Use “같은 [7일 기간]의 두 번째 사용은 난이도 10, 세 번째는 11 ...” only if cumulative escalation is approved; otherwise state the fixed repeat difficulty. Preserve that the GM rolls secretly and failed readings sound plausible. The future horizon and retry restriction are distinct.
+- **Manual Review:** Done
 
 ### 018 계약술 / Pacting
 
@@ -125,6 +128,7 @@ The following 21 retained items use their original review numbers. Current catal
 - **Name:** Keep.
 - **Observation:** R/D: choosing a pantheon/domain is a persistent creation choice, but only Pray is encoded. The page-142 reference is not self-contained. Immediate bonuses and a later Main-action spell are conflated; duration and expiration of that permission are unstated. The caster level and authority selecting the domain-appropriate spell are missing.
 - **Revision or ruling:** Split into “계약 대상을 선택합니다” and “하루에 한 번 ... 다음 효과 중 하나”. Give separate action/cost lines for +4 attack, +1 skill, and one level-1 spell. Identify the local domain list or include the allowed list. Do not equate mage archetype eligibility with automatically knowing/preparing spells; the text explicitly allows noncasters.
+- **Manual Review:** Done
 
 ### 019 혈마술 / Hemomancy
 
@@ -135,6 +139,7 @@ The following 21 retained items use their original review numbers. Current catal
 - **Name:** Keep; 혈액 마법 would be less compressed but not more mechanically accurate.
 - **Observation:** R: “하루에 한 번” and “사용할 때마다” coexist harmlessly if the latter describes cost, but the refund trigger after casting needs clarity. Define whether direct and indirect harm, mixed willing/unwilling targets, or a later harmful use disqualify the spell. Damage prevention and interrupted spells are unspecified.
 - **Revision or ruling:** State “주문 시전을 완료한 직후 ... 그 주문의 레벨당 1d4 피해와 기관계 부담 1점을 받습니다. 그 주문은 일일 시전 횟수를 소비하지 않은 것으로 처리합니다.” This is conditional on that timing interpretation. Specify whether damage must actually be suffered to gain the refund.
+- **Manual Review:** Done
 
 ### 020 문양술 / Sigilism
 
@@ -145,6 +150,7 @@ The following 21 retained items use their original review numbers. Current catal
 - **Name:** Keep; 인장술 is optional if it fits the token terminology elsewhere.
 - **Observation:** R: no token expiration, spell-selection rule, or handling of a second token is stated. Spending a cast now and recovering it while the token survives is significant, not merely alternate spell preparation. Clarify target/range and level determination when creating versus activating, armor restrictions, and whether silence/gesture exceptions alone are granted.
 - **Revision or ruling:** Write “동시에 충전된 토큰은 1개만 보유할 수 있습니다. 새 토큰을 충전하면 기존 토큰은 [실효/제작 불가 중 확정]”. State that only the creator can activate it. If the token remains until used, say so rather than adding an invented daily expiration.
+- **Manual Review:** Done
 
 ### 021 정신주술 / Mind-Sorcery
 
@@ -155,6 +161,7 @@ The following 21 retained items use their original review numbers. Current catal
 - **Name:** Suggested 정신 주술 for spacing; keep the term unless 마법/주술 are intentionally distinct systems.
 - **Observation:** R: the exclusion for HP-damaging spells is broader than merely suppressing their nonmental damage, yet the next sentence suppresses secondary effects only. Define direct/secondary damage, hybrid spells, and whether the restriction forbids learning, preparing, or casting. E: 대게 -> 대개; 입은채로 -> 입은 채로.
 - **Revision or ruling:** Separate “시전할 수 없는 주문” from “시전하되 발생하지 않는 부차적 효과”. Preserve the explicit remaining interruption/armor rules so silent casting does not imply universal stealth or armored casting. Link 비전 형태의 감정 to local spell ID apprehending_the_arcane_form.
+- **Manual Review:** Done
 
 ## Nonhuman Origins
 
@@ -167,6 +174,7 @@ The following 21 retained items use their original review numbers. Current catal
 - **Name:** Keep !인간 only if the programming-style negation is intentional. Add a pronunciation or explanatory subtitle; 인간 모사체 is a possible descriptive subtitle, not a recovered original title.
 - **Observation:** R: “마법을 제외한 다른 기술” should explicitly mean one skill and does not exclude combat skills. The daily algorithm bonus lacks a before/after-roll decision window. Mental magical immunity needs scope: consent, beneficial effects, and mixed physical/mental effects.
 - **Revision or ruling:** “마법 기술을 제외한 기술 1개를 보너스 기술로 얻습니다.” Distinguish fictional lack of self-awareness from removal of player choice; it must not silently change control of the PC. State that automaton traits are not granted rather than relying on a comparison readers may not know.
+- **Manual Review:** Done
 
 ### 023 맹금류 나락종 / Accipiter 那落種
 
@@ -197,6 +205,7 @@ The following 21 retained items use their original review numbers. Current catal
 - **Name:** Keep. Do not fabricate a source-language title for the blank English field.
 - **Observation:** R: “당신이 있는 곳” gives the reaction bonus no presence/participation limit; clarify whether the NPC must perceive the character. Multiple capybaras and Well Met can create an undefined stacking case. The week's language exposure needs a proficiency definition and whether exposure must be active.
 - **Revision or ruling:** State who benefits from the reaction-roll bonus and whether it applies once per roll regardless of how many sources are present. “일주일간 해당 언어에 노출되면 일상적인 의사소통이 가능한 수준으로 말할 수 있습니다” is a candidate only if that is the intended meaning of 쓸만한.
+- **Manual Review:** Done
 
 ### 026 구울 / Ghoul
 
@@ -207,6 +216,7 @@ The following 21 retained items use their original review numbers. Current catal
 - **Name:** Keep.
 - **Observation:** D: effect requires one pound of fresh human flesh per month, while Ghoulish Vigor's imported text requires one pound per week. The 21-day save and automatic state at 30 days do not settle which interval the PC uses. R: does feeding reset the timer only after a full pound, and does “이 상태” mean the compulsion or automatic save failure?
 - **Revision or ruling:** Do not average or select an interval. Add an explicit PC override if intended: “이 기원으로 얻는 구울의 생명력에는 다음 식사 주기가 적용됩니다: [확정].” Define the fresh-food requirement, timer reset, attack compulsion duration, and whether any stated immunity/trait applies to ordinary ghouls but not this origin.
+- **Manual Review:** Done
 
 ### 028 전령 나락종 / Harbinger 那落種
 
@@ -227,6 +237,7 @@ The following 21 retained items use their original review numbers. Current catal
 - **Name:** Keep the hanja on first mention: without it, 자각인 readily reads as 自覺 rather than 自刻. 스스로를 새긴 자 is an optional gloss, not a replacement imposed on the setting.
 - **Observation:** Resolved with the translator on 2026-10-05. Allocation and background growth precede the mandatory CON replacement: below 14 becomes 14; otherwise 18. Modifier bonuses follow. Exert is preserved, +2 maximum Strain adjustment is encoded, and score/modifier/HP/saves and play notes appear on the sheet. Total maximum Strain remains a separate task.
 - **Revision or ruling:** Confirmed: recovery requires exhaustion from labor/equivalent exertion at day's end. While exhausted by that activity, roll each whole attack/skill check twice and keep the lower result. Failure to meet the recovery condition adds 1 Strain nightly; death occurs strictly above the maximum. These are play-time notes. Thresholds, background growth, modifier ordering, fixed/rolled allocations, other-origin conflicts, removal and restoration are tested. See `PROJECT_RULES.md`.
+- **Manual Review:** Done
 
 ## Other Creature Origins
 
@@ -239,6 +250,8 @@ The following 21 retained items use their original review numbers. Current catal
 - **Name:** Consider 재산 취급 포병종 or retain 소유품 포병종; the latter's dehumanizing force is consistent with its flavor, not an automatic mistranslation.
 - **Observation:** Resolved on 2026-10-05 with the translator. Both allocation modes replace STR after optional replacement and background growth with a saved 1d4+2 result; modifier effects follow. Explicit rolling stores a raw integer 1–4 per focus instance, with no rerolls during rendering or restoration. Removing the focus restores the original allocation and growth.
 - **Revision or ruling:** Encoded CON/CHA modifier +1 with separate maximum +3 permission, unconditional attack -2, and a social-check +1 sheet note. The restricted skill remains one allotment. Missing/invalid dice or modifier choices block completion, including older drafts. Tests cover both allocation modes, ordering, caps, invalid input, derived values, removal and restoration. See `PROJECT_RULES.md`.
+- **Manual Review:** Done
+
 
 ### 045 기능성 포병종 / Functionary 抱病種
 
@@ -249,6 +262,8 @@ The following 21 retained items use their original review numbers. Current catal
 - **Name:** Suggested 기능 특화 포병종; 기능성 sounds like a product-quality adjective rather than a being bred for a purpose. Keep if that clinical tone is intentional.
 - **Observation:** Resolved with the translator on 2026-10-05: one skill allotment total and a free level-1 Specialist bound to it. Same-skill paid Specialist instances are removed with their choices and their picks refunded; other skills remain separate. The chosen -1 modifier (normal minimum -2) is now encoded. Grants are derived from eligible parents and are shown with source and bound skill.
 - **Revision or ruling:** Parent changes/removal and saved restoration rebuild the grant; automatic instances cannot be edited or removed independently. Level-2 creation remains unavailable. The function-specific +1 and normal tool/equipment substitution are play notes, with no automatic raw-material waiver. See `PROJECT_RULES.md` for refund and validation details. Tests cover counts, ownership, skill changes, removal, malformed choices and restoration.
+- **Manual Review:** Done
+
 
 ### 046 노동자 포병종 / Laborer 抱病種
 
@@ -259,6 +274,8 @@ The following 21 retained items use their original review numbers. Current catal
 - **Name:** Keep.
 - **Observation:** Reopened at the user's request on 2026-10-05: verify whether a modifier penalty can take the normal -2/+2 range down to -3 or stops at -2. Current Laborer prose and `cap_override.min` both say -2; agreement between them does not settle the intended source rule. Review similar foci and stacked cap permissions without assuming a -1 penalty itself extends the minimum. The conditional Mental-save penalty is already encoded separately from ordinary targets.
 - **Revision or ruling:** Confirm the minimum and distinguish modifier contributions, permitted bounds and attribute scores before changing code/data. The task is tracked in `TASKS.md`. “절반의 휴식” still needs a scope decision if recovery systems are modeled; keep the mind-affecting condition on the Mental-save penalty.
+- **Manual Review:** Done
+
 
 ## Other World Origins
 

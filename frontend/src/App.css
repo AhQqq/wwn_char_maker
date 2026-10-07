@@ -873,7 +873,7 @@ textarea {
 
 .art-option.is-granted {
   background: var(--panel-muted);
-  border-style: dashed;
+  border-style: solid;
 }
 
 .art-selection button:focus-visible {
@@ -900,6 +900,18 @@ textarea {
   border-radius: 6px;
   background: var(--panel);
 }
+
+.spell-option-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.spell-option-title { min-width: 0; }
+.spell-option-title .focus-english-name { margin: 4px 0 0; overflow-wrap: anywhere; }
+.spell-option-heading > .focus-state-badge { flex-shrink: 0; white-space: nowrap; }
 
 .spell-option.is-learned {
   border-color: var(--accent);
@@ -2081,4 +2093,39 @@ button > .ui-icon { margin-inline: 3px 6px; }
   line-height: 1;
   vertical-align: -0.1em;
   word-break: normal;
+}
+
+
+/* Arts retain a monochrome identity separate from spell cards. */
+.art-option {
+  border-left: 2px solid #858585;
+}
+.art-option.is-learned {
+  border-left-color: #292929;
+  box-shadow: none;
+}
+.art-option-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+.art-option-title { min-width: 0; }
+.art-option .art-option-title h5 {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.art-option-title .focus-english-name {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+.art-selected-check {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: #39764e;
 }

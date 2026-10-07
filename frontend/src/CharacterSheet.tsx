@@ -14,7 +14,6 @@ import type { evaluateArtChoices } from '../../shared/artSelection'
 import { AbilitySheet } from './AbilitySheet'
 import { InventorySummary } from './EquipmentInventory'
 import { RulesLink } from './RulesLink'
-import { SaveSummary } from './SaveSummary'
 import { focusGrantLabel, focusInstanceLabel } from './focusSelection'
 import type { FocusOption } from './focusSelection'
 import { plusModifier } from './formatting'
@@ -142,20 +141,24 @@ export function CharacterSheet({
       </div>
 
       <details className="sheet-disclosure">
-        <summary>전투 수치와 내성 <span>상세 계산</span></summary>
+        <summary>기타 수치</summary>
+      <div className="sheet-grid">
+        <div><span>반응 판정 수정치</span><strong>{evaluationCurrent ? plusModifier(evaluation.derived.reactionRollModifier) : '--'}</strong></div>
+        <div><span>히트 주사위</span><strong>{evaluation.derived.hitDice || `d${evaluation.derived.hitDie || 0}`}</strong></div>
+        <div><span>기본 공격 보너스</span><strong>{plusModifier(evaluation.derived.baseAttackBonus)}</strong></div>
+        <div><span>포커스 공격 보너스</span><strong>{plusModifier(evaluation.derived.focusAttackBonus ?? 0)}</strong></div>
+      </div>
+
+      <details className="sheet-disclosure">
+        <summary>계산 내역</summary>
         <RulesLink topic="combat">계산 규칙</RulesLink>
         {displayedArmorClass.complete && displayedArmorClass.baseSource && <p aria-label="AC 계산 내역">
           기본 AC {displayedArmorClass.base} ({displayedArmorClass.baseSource.name.trim()}{displayedArmorClass.baseSource.armorBonus && <>
             {' '}{displayedArmorClass.armor?.armor?.baseAc} + {displayedArmorClass.baseSource.armorBonus.name.trim()} {displayedArmorClass.baseSource.armorBonus.value}</>})
           {' '}· 방패 {plusModifier(displayedArmorClass.shieldBonus)} · 민첩 {plusModifier(displayedArmorClass.dexterity)} = AC {displayedAC}
         </p>}
-      <div className="sheet-grid">
-        <div><span>히트 주사위</span><strong>{evaluation.derived.hitDice || `d${evaluation.derived.hitDie || 0}`}</strong></div>
-        <div><span>기본 공격 보너스</span><strong>{plusModifier(evaluation.derived.baseAttackBonus)}</strong></div>
-        <div><span>포커스 공격 보너스</span><strong>{plusModifier(evaluation.derived.focusAttackBonus ?? 0)}</strong></div>
-      </div>
 
-      {evaluationCurrent && <div className="info-panel" aria-label="HP 계산 내역">
+      {evaluationCurrent && <div aria-label="HP 계산 내역">
         <p>HD 최댓값 {evaluation.derived.hitPointBreakdown.hitDiceMaximum} · 건강 {plusModifier(evaluation.derived.hitPointBreakdown.constitutionModifier)}
           {' '}· 포커스 {plusModifier(evaluation.derived.hitPointBreakdown.focusBonus)}
           {evaluation.derived.hitPointBreakdown.minimumAdjustment > 0 && <> · 최소 HP 1 보정 {plusModifier(evaluation.derived.hitPointBreakdown.minimumAdjustment)}</>}
@@ -163,23 +166,23 @@ export function CharacterSheet({
         {evaluation.derived.hitPointBreakdown.sources.length > 0 && <ul>{evaluation.derived.hitPointBreakdown.sources.map((source) =>
           <li key={source.instanceId}>{source.name} · {FOCUS_BY_ID.get(source.focusId)?.category} · 최대 HP {plusModifier(source.value)}</li>)}</ul>}
       </div>}
-      {backendOnline && Boolean(evaluation.derived.hitDiceAdjustments?.length) && <div className="info-panel" aria-label="히트 주사위 조정">
+      {backendOnline && Boolean(evaluation.derived.hitDiceAdjustments?.length) && <div aria-label="히트 주사위 조정">
         <strong>히트 주사위 조정</strong>
         <p>{evaluation.derived.baseHitDice} &rarr; {evaluation.derived.hitDice}: {evaluation.derived.hitDiceAdjustments.map((item) => (item.name || nameFor(item.abilityId))).join(', ')}.</p>
       </div>}
 
-      {backendOnline && Boolean(evaluation.derived.baseAttackAdjustments?.length) && <div className="info-panel" aria-label="기본 공격 보너스 조정">
+      {backendOnline && Boolean(evaluation.derived.baseAttackAdjustments?.length) && <div aria-label="기본 공격 보너스 조정">
         <strong>기본 공격 보너스 조정</strong>
         <p>클래스 성장 수치 {plusModifier(evaluation.derived.progressionAttackBonus)} + 조정 ({plusModifier(evaluation.derived.baseAttackBonusAdjustment)}) = 기본 공격 보너스 {plusModifier(evaluation.derived.baseAttackBonus)}.</p>
         <ul>{evaluation.derived.baseAttackAdjustments.map((item) => <li key={item.instanceId}>{FOCUS_BY_ID.get(item.focusId)?.name || '알 수 없는 포커스'}: {plusModifier(item.value)}</li>)}</ul>
       </div>}
 
-      <SaveSummary saves={displayedSaves} />
-      {Boolean(evaluation.derived.encumbranceStrengthBonus || evaluation.derived.systemStrainMaxBonus) && <div className="info-panel">
+      {Boolean(evaluation.derived.encumbranceStrengthBonus || evaluation.derived.systemStrainMaxBonus) && <div>
         <p>하중 계산용 근력 보정: {plusModifier(evaluation.derived.encumbranceStrengthBonus ?? 0)}</p>
         <p>최대 기관계 부담 보정: {plusModifier(evaluation.derived.systemStrainMaxBonus ?? 0)}</p>
       </div>}
 
+      </details>
       </details>
 
       </div>

@@ -60,17 +60,21 @@ export function SpellPicker({ classIds, classes, spells, choices, traditions = [
                       const reason = spellSelectionReason(spell, slot, choices, classIds, traditions)
                       const statusId = `spell-${slot}-${spell.id}-status`
                       return <article key={spell.id} data-spell-id={spell.id} className={`spell-option${selected ? ' is-learned' : ''}`}>
-                        <h5>{spell.name}</h5>
-                        <p className="focus-english-name">{spell.englishName}</p>
-                        <span className="focus-state-badge">1레벨{selected ? ' / 습득함' : ''}</span>
+                        <div className="spell-option-heading">
+                          <div className="spell-option-title">
+                            <h5>{spell.name}</h5>
+                            <p className="focus-english-name">{spell.englishName}</p>
+                          </div>
+                          <span className="focus-state-badge">1레벨{selected ? ' / 습득함' : ''}</span>
+                        </div>
                         <details className="spell-description">
                           <summary>전체 설명 읽기</summary>
                           <p>{rulesText(spell.description) || '등록된 설명이 없습니다.'}</p>
                         </details>
                         <button type="button" className={`focus-level-button${selected ? ' selected' : ''}`}
-                          aria-pressed={selected} disabled={!selected && Boolean(reason)} aria-describedby={statusId}
+                          aria-pressed={selected} disabled={!selected && Boolean(reason)} aria-describedby={!selected && reason ? statusId : undefined}
                           onClick={() => onToggle(slot, spell.id)}>{selected ? '주문 해제' : '주문 습득'}</button>
-                        <small id={statusId} className="focus-level-status">{selected ? `${letter}번째 클래스에서 습득했습니다.` : reason ? ko(reason) : `${letter}번째 클래스의 주문 선택 2개 중 1개를 사용합니다.`}</small>
+                        {!selected && reason && <small id={statusId} className="focus-level-status">{ko(reason)}</small>}
                       </article>
                     })}
                   </div>

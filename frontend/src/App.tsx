@@ -145,7 +145,7 @@ const EMPTY_EVALUATION: Evaluation = {
   focusBonuses: [],
   skillGrantCounts: {},
   derived: {
-    movementSpeed: 30, initiative: 0, systemStrain: { current: 0, maximum: 0 },
+    movementSpeed: 30, initiative: 0, reactionRollModifier: 0, systemStrain: { current: 0, maximum: 0 },
     hitPoints: 0,
     hitPointBreakdown: { hitDiceMaximum: 0, constitutionModifier: 0, focusBonus: 0, sources: [], minimumAdjustment: 0 },
     hitDie: 0,

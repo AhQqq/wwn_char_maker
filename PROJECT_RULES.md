@@ -614,3 +614,8 @@ Art catalogue metadata encodes `minimum_hit_dice` and the first-level `unarmored
 ## All Directions Edge Style and Die Hard HP
 
 `all_directions_edge_style1` applies `hit_die_penalty: 2` to the resolved HD expression after class/ability overrides and art minimums. Thus 1d6+2 becomes 1d6, and Warrior/Duelist's 1d6 becomes 1d6-2. The HD adjustment retains the focus name as its source. It does not change die size or class progression data. `die_hard1` grants `hit_points_per_level: 2`; this level-1 builder adds +2 maximum HP with its own source, alongside other eligible focus HP bonuses. Sum the final HD maximum, final CON modifier and HP bonuses before applying minimum HP 1. Restoration recomputes from originals; removal or failed eligibility removes the corresponding effect. Combat-skill choices and class prerequisites are preserved. Additional attacks, System Strain spending and conditional stabilization are sheet notes, resolved during play.
+
+
+## Reaction Roll Modifier
+
+The reaction roll modifier defaults to 0. Shared creation evaluation exposes it as `derived.reactionRollModifier`; the character sheet displays it in the initially collapsed 기타 수치 section. Eligible, funded `well_met1` and `focus_0251` each add +1 via `derived_bonus.reaction_roll`; together they give +2. Removing either focus removes its contribution, and saved drafts recompute from their selections. No attribute modifier is added automatically. This is a modifier, not a rolled reaction result or a player-entered value.

@@ -112,6 +112,7 @@ export function evaluateCreationEffects(draft: CharacterInput, data: CharacterDa
   const progressionAttackBonus = Number((progression?.ab ?? '').replace('+', '')) || 0;
   const baseAttackBonus = progressionAttackBonus + focusCreation.derived.baseAttackBonusAdjustment;
   const movementSpeed = 30 + (classEvaluation.complete ? focusCreation.derived.movementSpeedBonus : 0);
+  const reactionRollModifier = classEvaluation.complete ? focusCreation.derived.reactionRollBonus : 0;
   const initiative = modifiers.DEX + (classEvaluation.complete ? focusCreation.derived.initiativeBonus : 0);
   // Creation starts at zero strain; the maximum uses the final score, not its modifier.
   const systemStrain = { current: 0, maximum: focusCreation.scores.CON +
@@ -119,5 +120,5 @@ export function evaluateCreationEffects(draft: CharacterInput, data: CharacterDa
   const focusTraditions = classEvaluation.complete ? focusCreation.traditions : [];
   const focusEffort = evaluateFocusEffort(focusTraditions, skillAllocation.states);
   return { classAbilities, focusAbilities, abilitySelection, baseModifiers, modifiers, savingThrows, equipmentInventory,
-    hitDiceEvaluation, hitDice, hitDie, hitPoints, hitPointBreakdown, progressionAttackBonus, baseAttackBonus, focusTraditions, focusEffort, movementSpeed, initiative, systemStrain };
+    hitDiceEvaluation, hitDice, hitDie, hitPoints, hitPointBreakdown, progressionAttackBonus, baseAttackBonus, focusTraditions, focusEffort, movementSpeed, initiative, reactionRollModifier, systemStrain };
 }
